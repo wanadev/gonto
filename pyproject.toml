@@ -1,0 +1,43 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "gonto"
+version = "0.0.0"
+authors = [
+    {name = "Fabien LOISON"},
+]
+description = "Dependency manager for WandevStudio"
+readme = "README.rst"
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "nox",
+    "flit",
+    "black",
+    "flake8",
+    "flake8-pyproject",
+    "validate-pyproject",
+]
+
+[project.scripts]
+gonto = "gonto.__main__:main"
+
+[project.urls]
+source = "https://gitlab.wanadev.org/tools/gonto"
+
+[tool.black]
+target-version = ["py310"]
+
+[tool.flake8]
+ignore = [
+    # ↓↓ Black handles that its way... :)
+    "E203",  # whitespace before ':'
+    "W503",  # line break before binary operator
+    "E501",  # line too long (> 79 characters)
+]

@@ -1,0 +1,14 @@
+# Python
+/dist/
+/build/
+/*.egg-info/
+__pycache__/
+*.pyc
+
+# Temporary files / backup / cache
+*~
+*#
+.nox
+
+# Misc
+/__env__/

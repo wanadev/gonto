@@ -1,0 +1,10 @@
+stages:
+  - test
+
+lint:
+  stage: test
+  image: python:3.14
+  before_script:
+    - pip install nox
+  script:
+    - nox -s lint
