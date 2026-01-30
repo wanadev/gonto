@@ -23,6 +23,9 @@ dev = [
     "flake8",
     "flake8-pyproject",
     "validate-pyproject",
+    "mypy",
+    "sphinx",
+    "furo",
 ]
 
 [project.scripts]
@@ -40,4 +43,5 @@ ignore = [
     "E203",  # whitespace before ':'
     "W503",  # line break before binary operator
     "E501",  # line too long (> 79 characters)
+    "E221",  # multiple spaces before operator
 ]
