@@ -8,5 +8,6 @@ Bindings for Win32 APIs.
    :caption: Contents:
 
    ./const.rst
+   ./fileapi.rst
    ./handleapi.rst
    ./virtdisk.rst

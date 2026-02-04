@@ -1,10 +1,27 @@
+"""Manipulate disk images (vhd, vhdx, iso) on Windows.
+
+Example usage::
+
+    from gonto.diskimage import DiskImage
+
+    disk = DiskImage()
+    disk.open("./mydisk.vhd")
+    disk.attach()
+    # Do stuff
+    disk.detach()
+    del disk
+"""
+
 import ctypes
 import ctypes.wintypes
 from pathlib import Path
+from collections.abc import Iterator
 
-from .win32 import virtdisk
+from .win32 import fileapi
 from .win32 import handleapi
+from .win32 import virtdisk
 from .win32.const import ERROR_SUCCESS
+from .win32.const import ERROR_NO_MORE_FILES
 
 _ext_to_device_type = {
     ".iso": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.ISO,
@@ -135,7 +152,6 @@ class DiskImage:
         """Retrieves the path to the physical device object that contains a
         virtual hard disk (VHD) or CD or DVD image file (ISO).
 
-        :rtype: str
         :return: The path of the physical device object.
 
         :raise IOError: If the virtual disk was not opened using the
@@ -159,6 +175,45 @@ class DiskImage:
             raise ctypes.WinError(ret)  # type: ignore
 
         return _path_p.value
+
+    def list_volumes(self) -> Iterator[str]:
+        """List volumes available in the disk image.
+
+        :returns: The available volumes.
+
+        :raise IOError: If the virtual disk was not opened using the
+            :py:meth:`DiskImage.open` method.
+        :raise WindowsError|OSError: If a Win32 error occurs.
+        """
+        if not self._handle:
+            raise IOError("No virtual disk opened!")
+
+        # TODO handle case where disk not attached?
+
+        _volume_name_p = ctypes.create_unicode_buffer(1024)
+        buffer_length = 1024  # WARN: Length in TCHARs (a.k.a WCHAR in our case)
+
+        _find_handle = fileapi.lib.FindFirstVolumeW(_volume_name_p, buffer_length)
+
+        if _find_handle == handleapi.INVALID_HANDLE_VALUE:
+            raise ctypes.WinError()  # type: ignore
+
+        try:
+            # TODO Filter volume
+            yield _volume_name_p.value
+
+            while fileapi.lib.FindNextVolumeW(
+                _find_handle, _volume_name_p, buffer_length
+            ):
+                # TODO Filter volume
+                yield _volume_name_p.value
+
+            if ctypes.GetLastError() != ERROR_NO_MORE_FILES:  # type: ignore
+                raise ctypes.WinError()  # type: ignore
+
+        finally:
+            fileapi.lib.FindVolumeClose(_find_handle)
+            # Note: silently ignore errors that may occur when closing the handle
 
     def __del__(self) -> None:
         if not self._handle:

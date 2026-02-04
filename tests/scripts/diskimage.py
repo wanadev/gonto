@@ -27,6 +27,9 @@ def main(args=sys.argv[1:]):
     phy_path = disk.get_physical_path()
     print("Physical path: %s" % phy_path)
 
+    for vol in disk.list_volumes():
+        print("Volume: %s" % vol)
+
     time.sleep(2)
 
     print("Detaching disk image...")

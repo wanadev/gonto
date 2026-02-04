@@ -36,5 +36,6 @@ def _bind_lib():
     return lib
 
 
-#: Binding of ``kernel32.dll``. See source code for a list of bound functions.
+#: Binding of handleapi functions of ``kernel32.dll``. See source code for a
+#: list of bound functions.
 lib = _bind_lib()
