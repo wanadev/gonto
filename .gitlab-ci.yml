@@ -1,5 +1,6 @@
 stages:
   - test
+  - pages
 
 lint:
   stage: test
@@ -8,3 +9,13 @@ lint:
     - pip install nox
   script:
     - nox -s lint
+
+build_pages:
+  stage: pages
+  image: python:3.14
+  before_script:
+    - pip install nox
+  script:
+    - nox -s gendoc
+  pages:
+    publish: build/html/
