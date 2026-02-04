@@ -3,12 +3,12 @@
 import sys
 import time
 
-from gonto.win32 import virtdisk
+from gonto.diskimage import DiskImage
 
 
 def print_help():
     print("USAGE:")
-    print("  ./win32_virtdisk.py <DISK_IMAGE>")
+    print("  ./diskimage.py <DISK_IMAGE>")
 
 
 def main(args=sys.argv[1:]):
@@ -16,21 +16,21 @@ def main(args=sys.argv[1:]):
         print_help()
         sys.exit(1)
 
-    vd = virtdisk.VirtDisk()
+    disk = DiskImage()
 
     print("Opening disk image...")
-    vd.open(args[0])
+    disk.open(args[0])
 
     print("Attaching disk image...")
-    vd.attach()
+    disk.attach()
 
-    phy_path = vd.get_physical_path()
+    phy_path = disk.get_physical_path()
     print("Physical path: %s" % phy_path)
 
     time.sleep(2)
 
     print("Detaching disk image...")
-    vd.detach()
+    disk.detach()
 
 
 if __name__ == "__main__":

@@ -5,4 +5,5 @@ Python API
    :maxdepth: 2
    :caption: Contents:
 
+   ./diskimage.rst
    ./win32/index.rst

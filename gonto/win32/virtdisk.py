@@ -1,10 +1,14 @@
+"""Bindings for the Win32 VirtDisk API."""
+
+import sys
 import ctypes
 import ctypes.wintypes
 import uuid
 from enum import IntEnum, Enum, IntFlag
-from pathlib import Path
 
-from .const import ERROR_SUCCESS
+# =============================================================================
+# Enums
+# =============================================================================
 
 
 class VIRTUAL_STORAGE_TYPE_DEVICE(IntEnum):
@@ -107,6 +111,11 @@ class DETACH_VIRTUAL_DISK_FLAG(IntFlag):
     NONE = 0x00000000
 
 
+# =============================================================================
+# Structures
+# =============================================================================
+
+
 class VirtualStorageType(ctypes.Structure):
     """Contains the type and provider (vendor) of the virtual storage device.
 
@@ -119,225 +128,87 @@ class VirtualStorageType(ctypes.Structure):
     ]
 
 
-class VirtDisk:
-    """High-Level binding of the VirtDisk Win32 API."""
+# =============================================================================
+# Function bindings
+# =============================================================================
 
-    def __init__(self):
-        self._win32_virtdisk = ctypes.windll.LoadLibrary("virtdisk.dll")
-        self._win32_kernel32 = ctypes.windll.LoadLibrary("kernel32.dll")
-        self._handle = None
 
-    def open(
-        self,
-        path: Path | str,
-        device_type: VIRTUAL_STORAGE_TYPE_DEVICE | None = None,
-        access_mask: VIRTUAL_DISK_ACCESS_MASK = VIRTUAL_DISK_ACCESS_MASK.ALL,
-        open_flags: OPEN_VIRTUAL_DISK_FLAG = OPEN_VIRTUAL_DISK_FLAG.NONE,
-    ) -> None:
-        """Opens a virtual hard disk (VHD) or CD or DVD image file (ISO) for
-        use.
+def _bind_lib():
+    if sys.platform == "win32":
+        lib = ctypes.windll.LoadLibrary("virtdisk.dll")
+    else:
+        return None
 
-        :param path: Path to the disk image.
-        :param device_type: The type of the disk image (default: ``None``
-            (guessed from file extension)).
-        :param access_mask: Bitmask for specifying access rights to a virtual
-            hard disk (default: :py:attr:`VIRTUAL_DISK_ACCESS_MASK.ALL`).
-        :param open_flags: Virtual hard disk open request flags (default:
-            :py:attr:`OPEN_VIRTUAL_DISK_FLAG.NONE`).
+    # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-openvirtualdisk
+    # DWORD OpenVirtualDisk(
+    #   [in]           PVIRTUAL_STORAGE_TYPE         VirtualStorageType,
+    #   [in]           PCWSTR                        Path,
+    #   [in]           VIRTUAL_DISK_ACCESS_MASK      VirtualDiskAccessMask,
+    #   [in]           OPEN_VIRTUAL_DISK_FLAG        Flags,
+    #   [in, optional] POPEN_VIRTUAL_DISK_PARAMETERS Parameters,
+    #   [out]          PHANDLE                       Handle
+    # );
+    lib.OpenVirtualDisk.argtypes = [
+        ctypes.POINTER(VirtualStorageType),
+        ctypes.wintypes.LPCWSTR,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
+        #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ns-virtdisk-open_virtual_disk_parameters
+        ctypes.wintypes.PHANDLE,
+    ]
+    lib.OpenVirtualDisk.restype = ctypes.wintypes.DWORD
 
-        :raise WindowsError|OSError: If a Win32 error occurs.
-        :raise IOError: If a virtual disk has already been opened.
-        """
+    # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-attachvirtualdisk
+    # DWORD AttachVirtualDisk(
+    #   [in]           HANDLE                          VirtualDiskHandle,
+    #   [in, optional] PSECURITY_DESCRIPTOR            SecurityDescriptor,
+    #   [in]           ATTACH_VIRTUAL_DISK_FLAG        Flags,
+    #   [in]           ULONG                           ProviderSpecificFlags,
+    #   [in, optional] PATTACH_VIRTUAL_DISK_PARAMETERS Parameters,
+    #   [in, optional] LPOVERLAPPED                    Overlapped
+    # );
+    lib.AttachVirtualDisk.argtypes = [
+        ctypes.wintypes.HANDLE,
+        ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
+        #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-security_descriptor
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.ULONG,
+        ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
+        #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ns-virtdisk-attach_virtual_disk_parameters
+        ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
+        #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-overlapped
+    ]
+    lib.AttachVirtualDisk.restype = ctypes.wintypes.DWORD
 
-        if self._handle:
-            raise IOError("Virtual disk already opened!")
+    # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-detachvirtualdisk
+    # DWORD DetachVirtualDisk(
+    #   [in] HANDLE                   VirtualDiskHandle,
+    #   [in] DETACH_VIRTUAL_DISK_FLAG Flags,
+    #   [in] ULONG                    ProviderSpecificFlags
+    # );
+    lib.DetachVirtualDisk.argtypes = [
+        ctypes.wintypes.HANDLE,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.ULONG,
+    ]
+    lib.DetachVirtualDisk.restype = ctypes.wintypes.DWORD
 
-        ext_to_device_type = {
-            ".iso": VIRTUAL_STORAGE_TYPE_DEVICE.ISO,
-            ".vhd": VIRTUAL_STORAGE_TYPE_DEVICE.VHD,
-            ".vhdx": VIRTUAL_STORAGE_TYPE_DEVICE.VHDX,
-        }
+    # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-getvirtualdiskphysicalpath
+    # DWORD GetVirtualDiskPhysicalPath(
+    #   [in]            HANDLE VirtualDiskHandle,
+    #   [in, out]       PULONG DiskPathSizeInBytes,
+    #   [out, optional] PWSTR  DiskPath
+    # )
+    lib.GetVirtualDiskPhysicalPath.argtypes = [
+        ctypes.wintypes.HANDLE,
+        ctypes.wintypes.PULONG,
+        ctypes.wintypes.LPWSTR,
+    ]
+    lib.GetVirtualDiskPhysicalPath.restype = ctypes.wintypes.DWORD
 
-        path = Path(path)
+    return lib
 
-        # Guess device_type from file ext
-        if device_type is None:
-            ext = path.suffix.lower()
-            if ext in ext_to_device_type:
-                device_type = ext_to_device_type[ext]
-            else:
-                device_type = VIRTUAL_STORAGE_TYPE_DEVICE.UNKNOWN
 
-        _virtual_storage_type = VirtualStorageType(
-            device_id=device_type.value,
-            guid=VIRTUAL_STORAGE_TYPE_VENDOR.MICROSOFT.value,
-        )
-
-        _path_p = ctypes.c_wchar_p(str(path))
-        _handle = ctypes.wintypes.HANDLE()
-
-        # DWORD OpenVirtualDisk(
-        #   [in]           PVIRTUAL_STORAGE_TYPE         VirtualStorageType,
-        #   [in]           PCWSTR                        Path,
-        #   [in]           VIRTUAL_DISK_ACCESS_MASK      VirtualDiskAccessMask,
-        #   [in]           OPEN_VIRTUAL_DISK_FLAG        Flags,
-        #   [in, optional] POPEN_VIRTUAL_DISK_PARAMETERS Parameters,
-        #   [out]          PHANDLE                       Handle
-        # );
-        # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-openvirtualdisk
-        self._win32_virtdisk.OpenVirtualDisk.argtypes = [
-            ctypes.POINTER(VirtualStorageType),
-            ctypes.wintypes.LPCWSTR,
-            ctypes.wintypes.DWORD,
-            ctypes.wintypes.DWORD,
-            ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
-            ctypes.wintypes.PHANDLE,
-        ]
-        self._win32_virtdisk.OpenVirtualDisk.restype = ctypes.wintypes.DWORD
-        ret = self._win32_virtdisk.OpenVirtualDisk(
-            _virtual_storage_type,
-            _path_p,
-            access_mask,
-            open_flags,
-            None,  # XXX https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ns-virtdisk-open_virtual_disk_parameters
-            ctypes.byref(_handle),
-        )
-
-        if ret != ERROR_SUCCESS or _handle.value is None:
-            raise ctypes.WinError(ret)  # type: ignore
-
-        self._handle = _handle
-
-    def attach(
-        self,
-        attach_flags: ATTACH_VIRTUAL_DISK_FLAG = ATTACH_VIRTUAL_DISK_FLAG.NONE,
-    ) -> None:
-        """Attaches a virtual hard disk (VHD) or CD or DVD image file (ISO).
-
-        :param attach_flags: Flags for the attach request (default:
-            :py:attr:`ATTACH_VIRTUAL_DISK_FLAG.NONE`).
-
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`VirtDisk.open` method.
-        :raise WindowsError|OSError: If a Win32 error occurs.
-        """
-
-        if not self._handle:
-            raise IOError("No virtual disk opened!")
-
-        # DWORD AttachVirtualDisk(
-        #   [in]           HANDLE                          VirtualDiskHandle,
-        #   [in, optional] PSECURITY_DESCRIPTOR            SecurityDescriptor,
-        #   [in]           ATTACH_VIRTUAL_DISK_FLAG        Flags,
-        #   [in]           ULONG                           ProviderSpecificFlags,
-        #   [in, optional] PATTACH_VIRTUAL_DISK_PARAMETERS Parameters,
-        #   [in, optional] LPOVERLAPPED                    Overlapped
-        # );
-        # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-attachvirtualdisk
-        self._win32_virtdisk.AttachVirtualDisk.argtypes = [
-            ctypes.wintypes.HANDLE,
-            ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
-            ctypes.wintypes.DWORD,
-            ctypes.wintypes.ULONG,
-            ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
-            ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
-        ]
-        self._win32_virtdisk.AttachVirtualDisk.restype = ctypes.wintypes.DWORD
-        ret = self._win32_virtdisk.AttachVirtualDisk(
-            self._handle,
-            None,  # XXX https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-security_descriptor
-            attach_flags,
-            0x00,
-            None,  # XXX https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ns-virtdisk-attach_virtual_disk_parameters
-            None,  # XXX https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-overlapped
-        )
-
-        if ret != ERROR_SUCCESS:
-            raise ctypes.WinError(ret)  # type: ignore
-
-    def detach(
-        self,
-        detach_flags: DETACH_VIRTUAL_DISK_FLAG = DETACH_VIRTUAL_DISK_FLAG.NONE,
-    ) -> None:
-        """Detaches a virtual hard disk (VHD) or CD or DVD image file (ISO).
-
-        :param detach_flags: Flags for the detach request (default:
-            :py:attr:`DETACH_VIRTUAL_DISK_FLAG.NONE`).
-
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`VirtDisk.open` method.
-        :raise WindowsError|OSError: If a Win32 error occurs.
-        """
-
-        if not self._handle:
-            raise IOError("No virtual disk opened!")
-
-        # DWORD DetachVirtualDisk(
-        #   [in] HANDLE                   VirtualDiskHandle,
-        #   [in] DETACH_VIRTUAL_DISK_FLAG Flags,
-        #   [in] ULONG                    ProviderSpecificFlags
-        # );
-        # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-detachvirtualdisk
-        self._win32_virtdisk.DetachVirtualDisk.argtypes = [
-            ctypes.wintypes.HANDLE,
-            ctypes.wintypes.DWORD,
-            ctypes.wintypes.ULONG,
-        ]
-        self._win32_virtdisk.DetachVirtualDisk.restype = ctypes.wintypes.DWORD
-        ret = self._win32_virtdisk.DetachVirtualDisk(
-            self._handle,
-            detach_flags,
-            0x00,
-        )
-
-        if ret != ERROR_SUCCESS:
-            raise ctypes.WinError(ret)  # type: ignore
-
-    def get_physical_path(self) -> str:
-        """Retrieves the path to the physical device object that contains a
-        virtual hard disk (VHD) or CD or DVD image file (ISO).
-
-        :rtype: str
-        :return: The path of the physical device object.
-
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`VirtDisk.open` method.
-        :raise WindowsError|OSError: If a Win32 error occurs.
-        """
-
-        if not self._handle:
-            raise IOError("No virtual disk opened!")
-
-        _path_p = ctypes.create_unicode_buffer(1024)
-        _size = ctypes.wintypes.ULONG(ctypes.sizeof(_path_p))
-
-        # DWORD GetVirtualDiskPhysicalPath(
-        #   [in]            HANDLE VirtualDiskHandle,
-        #   [in, out]       PULONG DiskPathSizeInBytes,
-        #   [out, optional] PWSTR  DiskPath
-        # )
-        # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-getvirtualdiskphysicalpath
-        self._win32_virtdisk.GetVirtualDiskPhysicalPath.argtypes = [
-            ctypes.wintypes.HANDLE,
-            ctypes.wintypes.PULONG,
-            ctypes.wintypes.LPWSTR,
-        ]
-        self._win32_virtdisk.GetVirtualDiskPhysicalPath.restype = ctypes.wintypes.DWORD
-        ret = self._win32_virtdisk.GetVirtualDiskPhysicalPath(
-            self._handle,
-            ctypes.byref(_size),
-            _path_p,
-        )
-
-        if ret != ERROR_SUCCESS:
-            raise ctypes.WinError(ret)  # type: ignore
-
-        return _path_p.value
-
-    def __del__(self) -> None:
-        if not self._handle:
-            return
-        if not self._win32_kernel32:
-            return
-        self._win32_kernel32.CloseHandle(self._handle)
-        self._handle = None
+#: Binding of ``virtdisk.dll``. See source code for a list of bound functions.
+lib = _bind_lib()
