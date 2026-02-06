@@ -3,6 +3,27 @@
 import sys
 import ctypes
 import ctypes.wintypes
+from enum import IntEnum
+
+# =============================================================================
+# Enums
+# =============================================================================
+
+
+class CREATION_DISPOSITION(IntEnum):
+    """An action to take on a file or device that exists or does not exist.
+
+    See: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+    """
+
+    # fmt: off
+    CREATE_NEW        = 1
+    CREATE_ALWAYS     = 2
+    OPEN_EXISTING     = 3
+    OPEN_ALWAYS       = 4
+    TRUNCATE_EXISTING = 5
+    # fmt: on
+
 
 # =============================================================================
 # Function bindings
@@ -11,7 +32,7 @@ import ctypes.wintypes
 
 def _bind_lib():
     if sys.platform == "win32":
-        lib = ctypes.windll.LoadLibrary("kernel32.dll")
+        lib = ctypes.WinDLL("kernel32.dll", use_last_error=True)
     else:
         return None
 
@@ -47,6 +68,28 @@ def _bind_lib():
         ctypes.wintypes.HANDLE,
     ]
     lib.FindVolumeClose.restype = ctypes.wintypes.BOOL
+
+    # https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+    # HANDLE CreateFileW(
+    #   [in]           LPCWSTR               lpFileName,
+    #   [in]           DWORD                 dwDesiredAccess,
+    #   [in]           DWORD                 dwShareMode,
+    #   [in, optional] LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    #   [in]           DWORD                 dwCreationDisposition,
+    #   [in]           DWORD                 dwFlagsAndAttributes,
+    #   [in, optional] HANDLE                hTemplateFile
+    # );
+    lib.CreateFileW.argtypes = [
+        ctypes.wintypes.LPWSTR,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
+        #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/wtypesbase/ns-wtypesbase-security_attributes
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.HANDLE,
+    ]
+    lib.CreateFileW.restype = ctypes.wintypes.HANDLE
 
     return lib
 

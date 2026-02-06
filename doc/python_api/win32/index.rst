@@ -10,4 +10,6 @@ Bindings for Win32 APIs.
    ./const.rst
    ./fileapi.rst
    ./handleapi.rst
+   ./ioapiset.rst
    ./virtdisk.rst
+   ./winioctl.rst

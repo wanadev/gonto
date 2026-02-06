@@ -12,6 +12,7 @@ Example usage::
     del disk
 """
 
+import re
 import ctypes
 import ctypes.wintypes
 from pathlib import Path
@@ -19,9 +20,14 @@ from collections.abc import Iterator
 
 from .win32 import fileapi
 from .win32 import handleapi
+from .win32 import ioapiset
 from .win32 import virtdisk
+from .win32 import winioctl
+from .win32.handleapi import INVALID_HANDLE_VALUE
 from .win32.const import ERROR_SUCCESS
 from .win32.const import ERROR_NO_MORE_FILES
+from .win32.const import ACCESS_MASK
+from .win32.const import FILE_SHARE
 
 _ext_to_device_type = {
     ".iso": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.ISO,
@@ -176,6 +182,84 @@ class DiskImage:
 
         return _path_p.value
 
+    def get_disk_number(self) -> int:
+        """Get the disk number of the current disk image.
+
+        .. important::
+
+           The disk image must be attached!
+
+        :raise IOError: If the virtual disk was not opened using the
+            :py:meth:`DiskImage.open` method.
+        :raise WindowsError|OSError: If a Win32 error occurs.
+        :raise ValueError: If the disk's physical path has an unexpected
+            format.
+        """
+        physical_path = self.get_physical_path()
+        match = re.match(r".+\\PhysicalDrive(\d+)$", physical_path, re.IGNORECASE)
+
+        if not match:
+            raise ValueError("Unexpected physical path: %s" % physical_path)
+
+        return int(match.group(1))
+
+    def is_volume_in_disk_image(self, volume_name: str) -> bool:
+        """Checks if the given volume name belongs to the disk image.
+
+        :param volume_name: Path of the volume (e.g.
+            ``"\\\\?\\Volume{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}\\"``)
+
+        :raise IOError: If the virtual disk was not opened using the
+            :py:meth:`DiskImage.open` method.
+        :raise WindowsError|OSError: If a Win32 error occurs.
+        """
+        if not self._handle:
+            raise IOError("No virtual disk opened!")
+
+        # /!\ https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew#:~:text=Do%20not%20use%20a%20trailing%20backslash
+        volume_name = volume_name.rstrip("\\")
+
+        _vol_handle = fileapi.lib.CreateFileW(
+            volume_name,
+            ACCESS_MASK.GENERIC_READ,
+            FILE_SHARE.READ | FILE_SHARE.WRITE,
+            None,
+            fileapi.CREATION_DISPOSITION.OPEN_EXISTING,
+            0x00,
+            None,
+        )
+
+        if _vol_handle == INVALID_HANDLE_VALUE:
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        try:
+            extents = winioctl.VolumeDiskExtents()
+            bytes_returned = ctypes.wintypes.DWORD()
+
+            success = ioapiset.lib.DeviceIoControl(
+                _vol_handle,
+                winioctl.IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+                None,
+                0,
+                ctypes.byref(extents),
+                ctypes.sizeof(extents),
+                ctypes.byref(bytes_returned),
+                None,
+            )
+
+            if not success:
+                raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+            disk_number = self.get_disk_number()
+
+            for i in range(extents.number_of_disk_extents):
+                if extents.extents[i].disk_number == disk_number:
+                    return True
+        finally:
+            handleapi.lib.CloseHandle(_vol_handle)
+
+        return False
+
     def list_volumes(self) -> Iterator[str]:
         """List volumes available in the disk image.
 
@@ -189,6 +273,7 @@ class DiskImage:
             raise IOError("No virtual disk opened!")
 
         # TODO handle case where disk not attached?
+        # TODO handle ioctl access error to not break the volume iter
 
         _volume_name_p = ctypes.create_unicode_buffer(1024)
         buffer_length = 1024  # WARN: Length in TCHARs (a.k.a WCHAR in our case)
@@ -199,16 +284,16 @@ class DiskImage:
             raise ctypes.WinError()  # type: ignore
 
         try:
-            # TODO Filter volume
-            yield _volume_name_p.value
+            if self.is_volume_in_disk_image(_volume_name_p.value):
+                yield _volume_name_p.value
 
             while fileapi.lib.FindNextVolumeW(
                 _find_handle, _volume_name_p, buffer_length
             ):
-                # TODO Filter volume
-                yield _volume_name_p.value
+                if self.is_volume_in_disk_image(_volume_name_p.value):
+                    yield _volume_name_p.value
 
-            if ctypes.GetLastError() != ERROR_NO_MORE_FILES:  # type: ignore
+            if ctypes.get_last_error() != ERROR_NO_MORE_FILES:  # type: ignore
                 raise ctypes.WinError()  # type: ignore
 
         finally:
