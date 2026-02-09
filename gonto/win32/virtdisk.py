@@ -135,7 +135,7 @@ class VirtualStorageType(ctypes.Structure):
 
 def _bind_lib():
     if sys.platform == "win32":
-        lib = ctypes.windll.LoadLibrary("virtdisk.dll")
+        lib = ctypes.WinDLL("virtdisk.dll", use_last_error=True)
     else:
         return None
 

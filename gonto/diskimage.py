@@ -12,7 +12,7 @@ drive letter::
     disk.detach()
     del disk
 
-Example persistent mounting of the first volume of the disk image on a choosen
+Example persistent mounting of the first volume of the disk image on a chosen
 drive letter::
 
     from gonto.diskimage import DiskImage
@@ -50,13 +50,48 @@ _ext_to_device_type = {
 }
 
 
+class BaseDiskImageError(Exception):
+    """Base error for Gonto's specific DiskImage errors."""
+
+    pass
+
+
+class DiskImageNotOpened(BaseDiskImageError):
+    """The operation requires an opened disk image but none was opened."""
+
+    pass
+
+
+class DiskImageAlreadyOpened(BaseDiskImageError):
+    """Trying to open a disk image whereas one is already opened in the object."""
+
+    pass
+
+
+class DiskImageNotAttached(BaseDiskImageError):
+    """The operation requires that the disk image was attached."""
+
+    pass
+
+
+class DiskImageAlreadyAttached(BaseDiskImageError):
+    """Trying to attach the disk image whereas it is already attached."""
+
+    pass
+
+
+class VolumeNotInDiskImage(BaseDiskImageError):
+    """The given volume does not belong to the open disk image."""
+
+    pass
+
+
 class DiskImage:
     """Manipulates a disk image (vhd, vhdx, iso) on Windows."""
 
-    # TODO handle case where disk not attached
-
     def __init__(self):
         self._handle = None
+        self._attached = False
 
     def open(
         self,
@@ -76,12 +111,12 @@ class DiskImage:
         :param open_flags: Virtual hard disk open request flags (default:
             :py:attr:`OPEN_VIRTUAL_DISK_FLAG.NONE`).
 
+        :raise DiskImageAlreadyOpened: If a virtual disk has already been opened.
         :raise WindowsError|OSError: If a Win32 error occurs.
-        :raise IOError: If a virtual disk has already been opened.
         """
 
         if self._handle:
-            raise IOError("Virtual disk already opened!")
+            raise DiskImageAlreadyOpened("Virtual disk already opened!")
 
         path = Path(path)
 
@@ -124,13 +159,18 @@ class DiskImage:
         :param attach_flags: Flags for the attach request (default:
             :py:attr:`ATTACH_VIRTUAL_DISK_FLAG.NONE`).
 
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageAlreadyAttached: If the disk is already attached. Use
+            :py:meth:`DiskImage.detach` to detach the disk first if you want
+            to reattach it with different flags.
         :raise WindowsError|OSError: If a Win32 error occurs.
         """
 
         if not self._handle:
-            raise IOError("No virtual disk opened!")
+            raise DiskImageNotOpened("No virtual disk opened!")
+        if self._attached:
+            raise DiskImageAlreadyAttached("The disk is already attached.")
 
         ret = virtdisk.lib.AttachVirtualDisk(
             self._handle,
@@ -144,6 +184,8 @@ class DiskImage:
         if ret != ERROR_SUCCESS:
             raise ctypes.WinError(ret)  # type: ignore
 
+        self._attached = True
+
     def detach(
         self,
         detach_flags: virtdisk.DETACH_VIRTUAL_DISK_FLAG = virtdisk.DETACH_VIRTUAL_DISK_FLAG.NONE,
@@ -153,13 +195,17 @@ class DiskImage:
         :param detach_flags: Flags for the detach request (default:
             :py:attr:`DETACH_VIRTUAL_DISK_FLAG.NONE`).
 
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotAttached: If the virtual disk image was not attached
+            using the :py:meth:`DiskImage.attach` method.
         :raise WindowsError|OSError: If a Win32 error occurs.
         """
 
         if not self._handle:
-            raise IOError("No virtual disk opened!")
+            raise DiskImageNotOpened("No virtual disk opened")
+        if not self._attached:
+            raise DiskImageNotAttached("The disk is not attached")
 
         ret = virtdisk.lib.DetachVirtualDisk(
             self._handle,
@@ -170,19 +216,25 @@ class DiskImage:
         if ret != ERROR_SUCCESS:
             raise ctypes.WinError(ret)  # type: ignore
 
+        self._attached = False
+
     def get_physical_path(self) -> str:
         """Retrieves the path to the physical device object that contains a
         virtual hard disk (VHD) or CD or DVD image file (ISO).
 
         :return: The path of the physical device object.
 
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotAttached: If the virtual disk image was not attached
+            using the :py:meth:`DiskImage.attach` method.
         :raise WindowsError|OSError: If a Win32 error occurs.
         """
 
         if not self._handle:
-            raise IOError("No virtual disk opened!")
+            raise DiskImageNotOpened("No virtual disk opened")
+        if not self._attached:
+            raise DiskImageNotAttached("The disk is not attached")
 
         _path_p = ctypes.create_unicode_buffer(1024)
         _size = ctypes.wintypes.ULONG(ctypes.sizeof(_path_p))
@@ -205,11 +257,13 @@ class DiskImage:
 
            The disk image must be attached!
 
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`DiskImage.open` method.
-        :raise WindowsError|OSError: If a Win32 error occurs.
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotAttached: If the virtual disk image was not attached
+            using the :py:meth:`DiskImage.attach` method.
         :raise ValueError: If the disk's physical path has an unexpected
             format.
+        :raise WindowsError|OSError: If a Win32 error occurs.
         """
         physical_path = self.get_physical_path()
         match = re.match(r".+\\PhysicalDrive(\d+)$", physical_path, re.IGNORECASE)
@@ -224,12 +278,16 @@ class DiskImage:
 
         :param volume_name: Path of the volume (``"\\\\?\\Volume{GUID}\\"``).
 
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotAttached: If the virtual disk image was not attached
+            using the :py:meth:`DiskImage.attach` method.
         :raise WindowsError|OSError: If a Win32 error occurs.
         """
         if not self._handle:
-            raise IOError("No virtual disk opened!")
+            raise DiskImageNotOpened("No virtual disk opened")
+        if not self._attached:
+            raise DiskImageNotAttached("The disk is not attached")
 
         # /!\ https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew#:~:text=Do%20not%20use%20a%20trailing%20backslash
         volume_name = volume_name.rstrip("\\")
@@ -280,12 +338,16 @@ class DiskImage:
 
         :returns: The available volumes.
 
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotAttached: If the virtual disk image was not attached
+            using the :py:meth:`DiskImage.attach` method.
         :raise WindowsError|OSError: If a Win32 error occurs.
         """
         if not self._handle:
-            raise IOError("No virtual disk opened!")
+            raise DiskImageNotOpened("No virtual disk opened")
+        if not self._attached:
+            raise DiskImageNotAttached("The disk is not attached")
 
         # TODO handle ioctl access error to not break the volume iter
 
@@ -295,20 +357,26 @@ class DiskImage:
         _find_handle = fileapi.lib.FindFirstVolumeW(_volume_name_p, buffer_length)
 
         if _find_handle == handleapi.INVALID_HANDLE_VALUE:
-            raise ctypes.WinError()  # type: ignore
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
 
         try:
-            if self.is_volume_in_disk_image(_volume_name_p.value):
-                yield _volume_name_p.value
+            try:
+                if self.is_volume_in_disk_image(_volume_name_p.value):
+                    yield _volume_name_p.value
+            except OSError:
+                pass  # Can't access the volume -> skip it.
 
             while fileapi.lib.FindNextVolumeW(
                 _find_handle, _volume_name_p, buffer_length
             ):
-                if self.is_volume_in_disk_image(_volume_name_p.value):
-                    yield _volume_name_p.value
+                try:
+                    if self.is_volume_in_disk_image(_volume_name_p.value):
+                        yield _volume_name_p.value
+                except OSError:
+                    pass  # Can't access the volume -> skip it.
 
             if ctypes.get_last_error() != ERROR_NO_MORE_FILES:  # type: ignore
-                raise ctypes.WinError()  # type: ignore
+                raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
 
         finally:
             fileapi.lib.FindVolumeClose(_find_handle)
@@ -328,18 +396,25 @@ class DiskImage:
             (``\\\\?\\Volume{GUID}\\``) or ``None`` to mount the first volume of the
             disk.
 
-        :raise IOError: If the virtual disk was not opened using the
-            :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotAttached: If the virtual disk image was not attached
+            using the :py:meth:`DiskImage.attach` method.
+        :raise VolumeNotInDiskImage: If the given volume name does not belong
+            to the current disk image.
         :raise WindowsError|OSError: If a Win32 error occurs.
         """
         if not self._handle:
-            raise IOError("No virtual disk opened!")
+            raise DiskImageNotOpened("No virtual disk opened")
+        if not self._attached:
+            raise DiskImageNotAttached("The disk is not attached")
 
         if not volume_name:
-            volume_name = list(self.list_volumes())[0]
+            volume_name = next(self.list_volumes())
         elif not self.is_volume_in_disk_image(volume_name):
-            # TODO Use a custom error class
-            raise Exception("Volume not in the opened disk image: %s" % volume_name)
+            raise VolumeNotInDiskImage(
+                "Volume not in the opened disk image: %s" % volume_name
+            )
 
         success = winbase.lib.SetVolumeMountPointW(mount_point, volume_name)
 
@@ -351,3 +426,4 @@ class DiskImage:
             return
         handleapi.lib.CloseHandle(self._handle)
         self._handle = None
+        self._attached = False
