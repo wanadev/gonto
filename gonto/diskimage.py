@@ -349,8 +349,6 @@ class DiskImage:
         if not self._attached:
             raise DiskImageNotAttached("The disk is not attached")
 
-        # TODO handle ioctl access error to not break the volume iter
-
         _volume_name_p = ctypes.create_unicode_buffer(1024)
         buffer_length = 1024  # WARN: Length in TCHARs (a.k.a WCHAR in our case)
 
