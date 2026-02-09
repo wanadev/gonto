@@ -1,6 +1,7 @@
 """Manipulate disk images (vhd, vhdx, iso) on Windows.
 
-Example usage::
+Example mounting of the first volume in the disk image on the first available
+drive letter::
 
     from gonto.diskimage import DiskImage
 
@@ -10,6 +11,19 @@ Example usage::
     # Do stuff
     disk.detach()
     del disk
+
+Example persistent mounting of the first volume of the disk image on a choosen
+drive letter::
+
+    from gonto.diskimage import DiskImage
+    from gonto.win32.virtdisk import ATTACH_VIRTUAL_DISK_FLAG
+
+    disk = DiskImage()
+    disk.open("./mydisk.vhd")
+    disk.attach(
+        attach_flags=ATTACH_VIRTUAL_DISK_FLAG.NO_DRIVE_LETTER | ATTACH_VIRTUAL_DISK_FLAG.PERMANENT_LIFETIME
+    )
+    disk.mount_volume("G:\\\\")
 """
 
 import re
@@ -22,8 +36,8 @@ from .win32 import fileapi
 from .win32 import handleapi
 from .win32 import ioapiset
 from .win32 import virtdisk
+from .win32 import winbase
 from .win32 import winioctl
-from .win32.handleapi import INVALID_HANDLE_VALUE
 from .win32.const import ERROR_SUCCESS
 from .win32.const import ERROR_NO_MORE_FILES
 from .win32.const import ACCESS_MASK
@@ -38,6 +52,8 @@ _ext_to_device_type = {
 
 class DiskImage:
     """Manipulates a disk image (vhd, vhdx, iso) on Windows."""
+
+    # TODO handle case where disk not attached
 
     def __init__(self):
         self._handle = None
@@ -206,8 +222,7 @@ class DiskImage:
     def is_volume_in_disk_image(self, volume_name: str) -> bool:
         """Checks if the given volume name belongs to the disk image.
 
-        :param volume_name: Path of the volume (e.g.
-            ``"\\\\?\\Volume{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}\\"``)
+        :param volume_name: Path of the volume (``"\\\\?\\Volume{GUID}\\"``).
 
         :raise IOError: If the virtual disk was not opened using the
             :py:meth:`DiskImage.open` method.
@@ -229,7 +244,7 @@ class DiskImage:
             None,
         )
 
-        if _vol_handle == INVALID_HANDLE_VALUE:
+        if _vol_handle == handleapi.INVALID_HANDLE_VALUE:
             raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
 
         try:
@@ -272,7 +287,6 @@ class DiskImage:
         if not self._handle:
             raise IOError("No virtual disk opened!")
 
-        # TODO handle case where disk not attached?
         # TODO handle ioctl access error to not break the volume iter
 
         _volume_name_p = ctypes.create_unicode_buffer(1024)
@@ -299,6 +313,38 @@ class DiskImage:
         finally:
             fileapi.lib.FindVolumeClose(_find_handle)
             # Note: silently ignore errors that may occur when closing the handle
+
+    def mount_volume(self, mount_point: str, volume_name: str | None = None) -> None:
+        """Mount a volume in the image disk with the given drive letter.
+
+        :param mount_point: The drive letter or the directory where the volume
+            will be mounted (e.g. ``"G:\\\\"``, ``"C:\\\\MyEmptyFolder\\\\"``).
+
+            .. IMPORTANT::
+
+               The mount path must ends with a trailing backslash (``\\``).
+
+        :param volume_name: The id of the volume to mount
+            (``\\\\?\\Volume{GUID}\\``) or ``None`` to mount the first volume of the
+            disk.
+
+        :raise IOError: If the virtual disk was not opened using the
+            :py:meth:`DiskImage.open` method.
+        :raise WindowsError|OSError: If a Win32 error occurs.
+        """
+        if not self._handle:
+            raise IOError("No virtual disk opened!")
+
+        if not volume_name:
+            volume_name = list(self.list_volumes())[0]
+        elif not self.is_volume_in_disk_image(volume_name):
+            # TODO Use a custom error class
+            raise Exception("Volume not in the opened disk image: %s" % volume_name)
+
+        success = winbase.lib.SetVolumeMountPointW(mount_point, volume_name)
+
+        if not success:
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
 
     def __del__(self) -> None:
         if not self._handle:

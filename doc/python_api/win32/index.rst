@@ -12,4 +12,5 @@ Bindings for Win32 APIs.
    ./handleapi.rst
    ./ioapiset.rst
    ./virtdisk.rst
+   ./winbase.rst
    ./winioctl.rst
