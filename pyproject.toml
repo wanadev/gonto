@@ -13,7 +13,10 @@ readme = "README.rst"
 license = "LicenseRef-Proprietary"
 license-files = ["LICENSE.txt"]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "PyYAML >= 6.0.3",
+    "jsonschema >= 4.26.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -26,6 +29,8 @@ dev = [
     "mypy",
     "sphinx",
     "furo",
+    "types-PyYAML",
+    "types-jsonschema",
 ]
 
 [project.scripts]

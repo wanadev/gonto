@@ -53,7 +53,7 @@ Example Gonto configuration file:
               JAVA_HOME: "{{mount_point}}java\\JDK25\\"
         env:
           FOO: "bar"
-        brefore_script: |          # Optional, before downloading, mounting and script
+        before_script: |           # Optional, before downloading, mounting and script
           echo before script
         script: |                  # Required
           .\build.bat --target=android
