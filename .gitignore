@@ -5,6 +5,10 @@
 __pycache__/
 *.pyc
 
+# Gonto config
+gonto.yaml
+gonto.yml
+
 # Temporary files / backup / cache
 *~
 *#
