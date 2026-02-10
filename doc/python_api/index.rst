@@ -6,4 +6,10 @@ Python API
    :caption: Contents:
 
    ./diskimage.rst
+   ./log.rst
    ./win32/index.rst
+
+
+.. automodule:: gonto
+   :members:
+   :undoc-members:

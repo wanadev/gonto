@@ -10,4 +10,5 @@ Gonto documentation
    :maxdepth: 2
    :caption: Contents:
 
+   ./env.rst
    ./python_api/index.rst
