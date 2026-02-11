@@ -100,6 +100,7 @@ CONFIG_SCHEMA = {
                             "type": "string",
                         },
                     },
+                    "required": ["script"],
                 }
             },
         },
