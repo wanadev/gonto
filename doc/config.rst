@@ -1,3 +1,5 @@
+.. _gonto configuration:
+
 Gonto Configuration
 ===================
 

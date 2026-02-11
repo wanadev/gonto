@@ -11,5 +11,6 @@ Gonto documentation
    :caption: Contents:
 
    ./config.rst
+   ./repo.rst
    ./env.rst
    ./python_api/index.rst
