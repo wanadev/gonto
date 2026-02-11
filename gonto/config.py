@@ -144,7 +144,7 @@ def validate_config(config: dict) -> tuple[bool, str]:
         jsonschema.validate(instance=config, schema=CONFIG_SCHEMA)
     except jsonschema.exceptions.ValidationError as error:
         return False, "%s: %s" % (
-            ".".join([str(p) for p in error.path] if error.path else "(root)"),
+            ".".join([str(p) for p in error.path]) if error.path else "(root)",
             error.message,
         )
     else:
@@ -171,6 +171,6 @@ def read_config() -> dict:
     for config_file_path in config_file_paths:
         with open(config_file_path, "rb") as config_file:
             # TODO: improve deep merge of dicts
-            config.update(yaml.load(config_file, Loader=yaml.Loader))
+            config.update(yaml.load(config_file, Loader=yaml.SafeLoader))
 
     return config
