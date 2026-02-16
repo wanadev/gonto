@@ -1,4 +1,4 @@
-:: Get the PodoNex version
+:: Get the Gonto version
 FOR /F %%i IN ('python -c "import tomllib;print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])"') DO (
     SET VERSION=%%i
 )

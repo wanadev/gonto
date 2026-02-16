@@ -8,7 +8,7 @@ Gonto – Dependency manager for WanadevStudio
 Requirements
 ------------
 
-* Python >= 3.10
+* Python >= 3.11
 
 
 Documentation
@@ -43,7 +43,7 @@ You must install Nox_ first::
 
     pip3 install nox
 
-Then you can build the documntation with the following command::
+Then you can build the documentation with the following command::
 
     nox -s gendoc
 

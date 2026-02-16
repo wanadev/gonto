@@ -28,7 +28,6 @@ dependencies:
 
   * 64bit version
   * Must be added to the PATH (there is a checkbox during the installation)
-  * Virtualenv must be installed and available in the PATH too
   * Download: https://www.python.org/
   * Choco: ``choco install python``
 
@@ -56,8 +55,8 @@ contains the ``pyproject.toml`` file)::
 The result goes to ``gonto-win.dist`` folder.
 
 
-Build distribuable files
-------------------------
+Build distributable files
+-------------------------
 
 * Zip: run ``winbuild\build-zip.bat``
 
