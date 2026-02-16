@@ -14,3 +14,4 @@ Gonto documentation
    ./repo.rst
    ./env.rst
    ./python_api/index.rst
+   ./winbuild.rst
