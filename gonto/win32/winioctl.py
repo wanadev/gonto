@@ -1,4 +1,4 @@
-"""Bindings for the Win32 IoApiSet API."""
+"""Bindings for the Win32 IoApiCtl API."""
 
 import ctypes
 import ctypes.wintypes
