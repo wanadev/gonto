@@ -54,4 +54,7 @@ def http_get(
             if callback:
                 callback(progress)
 
+    if output_file_path.is_file():
+        output_file_path.unlink()
+
     output_file_path_partial.rename(output_file_path)
