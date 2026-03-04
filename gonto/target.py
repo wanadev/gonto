@@ -3,6 +3,9 @@ from enum import StrEnum
 from pathlib import Path
 from collections.abc import Iterator
 from collections.abc import Callable
+from typing import Any
+
+from .download import http_get
 
 
 class SCRIPT_TYPE(StrEnum):
@@ -19,6 +22,29 @@ class TargetDoesNotExist(ValueError):
 
 class MissingImage(Exception):
     pass
+
+
+def requirement_to_image_path(requirement: dict):
+    """Returns the image path from a Gonto requirement definition.
+
+    :param requirement: A Gonto requirement definition.
+
+    :returns: The image path.
+
+    >>> requirement_to_image_path({"name": "foobar", "version": "1.2.3"})
+    'foobar/foobar_v1.2.3_win64.vhd'
+    >>> requirement_to_image_path(
+    ...     {"name": "foobar", "version": "42", "platform": "multi", "format": "vhdx"}
+    ... )
+    'foobar/foobar_v42_multi.vhdx'
+    """
+    return "%s/%s_v%s_%s.%s" % (
+        requirement["name"],
+        requirement["name"],
+        requirement["version"],
+        requirement.get("platform", "win64"),
+        requirement.get("format", "vhd"),
+    )
 
 
 class Target:
@@ -43,29 +69,55 @@ class Target:
         self._env = dict(os.environ)
         self._env.update(self._target.get("env", {}))
 
-    def list_required_images(self) -> Iterator[str]:
+    def list_required_images(self) -> Iterator[dict[str, Any]]:
         """Lists target's required disk image.
 
         :returns: The required images.
+
+            Image definition::
+
+                {
+                    "path": "foobar/foobar_v1.2.3_win64.vhd",
+                    "name": "foobar",
+                    "version": "1.2.3",
+                    "platform": "win64",
+                    "format": "vhd",
+                    "mount_point": "",
+                    "env": {},
+                }
         """
         if "requires" not in self._target:
             return
         for requirement in self._target["requires"]:
-            yield "%s/%s_v%s_%s.%s" % (
-                requirement["name"],
-                requirement["name"],
-                requirement["version"],
-                requirement.get("platform", "win64"),
-                requirement.get("format", "vhd"),
-            )
+            yield {
+                "path": requirement_to_image_path(requirement),
+                "name": requirement["name"],
+                "version": requirement["version"],
+                "platform": requirement.get("platform", "win64"),
+                "format": requirement.get("format", "vhd"),
+                "mount_point": requirement.get("mount_point", ""),
+                "env": dict(requirement.get("env", {})),
+            }
 
-    def list_missing_images(self) -> Iterator[str]:
+    def list_missing_images(self) -> Iterator[dict[str, Any]]:
         """List required images that are not available in the cache.
 
         :returns: the uncached images.
+
+            Image definition::
+
+                {
+                    "path": "foobar/foobar_v1.2.3_win64.vhd",
+                    "name": "foobar",
+                    "version": "1.2.3",
+                    "platform": "win64",
+                    "format": "vhd",
+                    "mount_point": "",
+                    "env": {},
+                }
         """
         for image in self.list_required_images():
-            cached_image_path = Path(self._config["gonto"]["cache_dir"]) / image
+            cached_image_path = Path(self._config["gonto"]["cache_dir"]) / image["path"]
             if not cached_image_path.is_file():
                 yield image
 
@@ -82,7 +134,28 @@ class Target:
                 def callback(currentdl: int, dlcount: int, image_name: str, progress: float) -> None:
                     pass
         """
-        pass  # TODO
+        missing_images = list(self.list_missing_images())
+        currentdl = 0
+        for image in missing_images:
+            currentdl += 1
+            image_url = self._config["gonto"]["repository"]
+            if image_url[-1] != "/":
+                image_url += "/"
+            image_url += image["path"]
+            cached_image_path = Path(self._config["gonto"]["cache_dir"]) / image["path"]
+
+            if callback:
+                callback(currentdl, len(missing_images), image["path"], 0)
+
+            http_get(
+                image_url,
+                cached_image_path,
+                callback=lambda p: (
+                    callback(currentdl, len(missing_images), image["path"], p)
+                    if callback
+                    else None
+                ),
+            )
 
     def mount_images(self) -> None:
         """Mount disk images required for the target.

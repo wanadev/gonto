@@ -87,8 +87,8 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
     # TODO run before_script (opt)
 
     print("Checking requirements...")
-    images = list(target.list_required_images())
-    uncached_images = list(target.list_missing_images())
+    images = list([img["path"] for img in target.list_required_images()])
+    uncached_images = list([img["path"] for img in target.list_missing_images()])
 
     if images:
         for image in images:
@@ -104,7 +104,30 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
 
     if uncached_images:
         print("Downloading missing requirements...")
-        pass # TODO download missing images
+
+        def _progress_cb(
+            currentdl: int, dlcount: int, image_name: str, progress: float
+        ) -> None:
+            if progress == 0:
+                print(
+                    "\r* Downloading '%s'... (%i/%i)"
+                    % (
+                        image_name,
+                        currentdl,
+                        dlcount,
+                    )
+                )
+            sys.stdout.write(
+                "\r  [%-20s] %.2f %%  "
+                % (
+                    "=" * int(progress * 20),
+                    progress * 100,
+                )
+            )
+            sys.stdout.flush()
+
+        target.download_missing_images(_progress_cb)
+        print("\r%s" % (" " * 40))
 
     if images:
         print("Mounting requirements...")
