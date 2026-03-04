@@ -107,9 +107,9 @@ class DiskImage:
         :param device_type: The type of the disk image (default: ``None``
             (guessed from file extension)).
         :param access_mask: Bitmask for specifying access rights to a virtual
-            hard disk (default: :py:attr:`VIRTUAL_DISK_ACCESS_MASK.ALL`).
+            hard disk (default: :py:attr:`.win32.virtdisk.VIRTUAL_DISK_ACCESS_MASK.ALL`).
         :param open_flags: Virtual hard disk open request flags (default:
-            :py:attr:`OPEN_VIRTUAL_DISK_FLAG.NONE`).
+            :py:attr:`.win32.virtdisk.OPEN_VIRTUAL_DISK_FLAG.NONE`).
 
         :raise DiskImageAlreadyOpened: If a virtual disk has already been opened.
         :raise WindowsError|OSError: If a Win32 error occurs.
@@ -157,7 +157,7 @@ class DiskImage:
         """Attaches a virtual hard disk (VHD) or CD or DVD image file (ISO).
 
         :param attach_flags: Flags for the attach request (default:
-            :py:attr:`ATTACH_VIRTUAL_DISK_FLAG.NONE`).
+            :py:attr:`.win32.virtdisk.ATTACH_VIRTUAL_DISK_FLAG.NONE`).
 
         :raise DiskImageNotOpened: If no virtual disk image was opened using
             the :py:meth:`DiskImage.open` method.
@@ -193,7 +193,7 @@ class DiskImage:
         """Detaches a virtual hard disk (VHD) or CD or DVD image file (ISO).
 
         :param detach_flags: Flags for the detach request (default:
-            :py:attr:`DETACH_VIRTUAL_DISK_FLAG.NONE`).
+            :py:attr:`.win32.virtdisk.DETACH_VIRTUAL_DISK_FLAG.NONE`).
 
         :raise DiskImageNotOpened: If no virtual disk image was opened using
             the :py:meth:`DiskImage.open` method.
