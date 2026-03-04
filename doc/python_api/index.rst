@@ -6,6 +6,7 @@ Python API
    :caption: Contents:
 
    ./config.rst
+   ./download.rst
    ./target.rst
    ./diskimage.rst
    ./log.rst

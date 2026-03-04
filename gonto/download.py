@@ -11,6 +11,12 @@ def http_get(
 ) -> None:
     """Downdoad a file using HTTP protocol.
 
+    .. NOTE::
+
+       The progress passed to callback function may stay to ``0`` during all
+       the download. This occures if the HTTP server does not provide the
+       ``Content-Length``.
+
     :param url: The URL of the file to download.
     :param destination: The path of the destination file.
     :param allow_overwrite: Allow to overwrite existing files (default:
