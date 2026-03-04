@@ -5,7 +5,10 @@ from collections.abc import Iterator
 from collections.abc import Callable
 from typing import Any
 
+from .log import logger
 from .download import http_get
+from .diskimage import DiskImage
+from .win32.virtdisk import ATTACH_VIRTUAL_DISK_FLAG
 
 
 class SCRIPT_TYPE(StrEnum):
@@ -68,6 +71,8 @@ class Target:
 
         self._env = dict(os.environ)
         self._env.update(self._target.get("env", {}))
+
+        self._diskimages: list[DiskImage] = []
 
     def list_required_images(self) -> Iterator[dict[str, Any]]:
         """Lists target's required disk image.
@@ -162,12 +167,47 @@ class Target:
 
         :raise MissingImage: If an image is missing from the cache.
         """
-        # XXX Resolve/add image env vars to self._env
-        pass  # TODO
+        cache_dir = Path(self._config["gonto"]["cache_dir"])
+
+        for requirement in self.list_required_images():
+            mount_point = requirement["mount_point"]
+            image_path = cache_dir / requirement["path"]
+
+            if not image_path.is_file():
+                raise MissingImage("Missing disk image: %s" % image_path)
+
+            diskimage = DiskImage()
+            diskimage.open(image_path)
+
+            attach_flags = (
+                ATTACH_VIRTUAL_DISK_FLAG.NO_DRIVE_LETTER
+                if mount_point
+                else ATTACH_VIRTUAL_DISK_FLAG.NONE
+            )
+            diskimage.attach(attach_flags)
+            self._diskimages.append(diskimage)
+
+            if mount_point:
+                diskimage.mount_volume(mount_point)
+            else:
+                raise NotImplementedError(
+                    "Auto assignation of drive letter is not supported yet"
+                )  # TODO
+
+            for name, value in requirement["env"].items():
+                value = value.replace("{{mount_point}}", mount_point)
+                self._env[name] = value
 
     def umount_images(self) -> None:
         """Umount all disk images of the target."""
-        pass  # TODO
+        while self._diskimages:
+            diskimage = self._diskimages.pop()
+            try:
+                diskimage.detach()
+            except Exception as error:
+                logger.error(
+                    "An error occured when detaching a disk image: %s" % str(error)
+                )
 
     def run_script(self, script_type: SCRIPT_TYPE) -> None:
         """Run a target script with proper environment.

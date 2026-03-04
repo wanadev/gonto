@@ -1,5 +1,6 @@
 import sys
 import argparse
+import time
 
 from . import APPLICATION_NAME, VERSION
 from .log import logger
@@ -131,13 +132,13 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
 
     if images:
         print("Mounting requirements...")
-        pass  # TODO mount images
+        target.mount_images()
 
-    # TODO run script
+    time.sleep(3)  # TODO run script
 
     if images:
         print("Unmounting requirements...")
-        pass  # TODO umount images
+        target.umount_images()
 
     # TODO run after script (opt)
 
