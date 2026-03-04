@@ -23,6 +23,12 @@ def black_fix(session):
 
 
 @nox.session(reuse_venv=True)
+def test(session):
+    session.install("-e", ".[dev]")
+    session.run("pytest", "--doctest-modules", "gonto", "tests")
+
+
+@nox.session(reuse_venv=True)
 def gendoc(session):
     session.install("sphinx", "furo")
     session.install("-e", ".")

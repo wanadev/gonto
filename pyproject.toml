@@ -25,6 +25,7 @@ dev = [
     "black",
     "flake8",
     "flake8-pyproject",
+    "pytest",
     "validate-pyproject",
     "mypy",
     "sphinx",

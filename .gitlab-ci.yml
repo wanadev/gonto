@@ -10,6 +10,14 @@ lint:
   script:
     - nox -s lint
 
+test:
+  stage: test
+  image: python:3.14
+  before_script:
+    - pip install nox
+  script:
+    - nox -s test
+
 build_pages:
   stage: pages
   image: python:3.14
