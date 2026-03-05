@@ -1,5 +1,6 @@
 import os
 import time
+import subprocess
 from enum import StrEnum
 from pathlib import Path
 from collections.abc import Iterator
@@ -248,12 +249,31 @@ class Target:
                     "An error occured when detaching a disk image: %s" % str(error)
                 )
 
+    def has_script(self, script_type: SCRIPT_TYPE) -> bool:
+        """Checks if the target contains the given script type.
+
+        :param script_type: The type of script.
+        """
+        return script_type in self._target and self._target[script_type]
+
     def run_script(self, script_type: SCRIPT_TYPE) -> None:
         """Run a target script with proper environment.
 
         :param script_type: The type of script.
+
+        :raises subprocess.CalledProcessError: when a command of the script
+            failed.
         """
-        pass  # TODO
+        if not self.has_script(script_type):
+            return
+
+        for command in [
+            c.strip() for c in self._target[script_type].strip().split("\n")
+        ]:
+            if not command:
+                continue
+            print("RUN[%s]: %s" % (script_type, command))
+            subprocess.run(command, shell=True, check=True, env=self._env)
 
     def __repr__(self):
         return "<Gonto.Target %s>" % self._target_name

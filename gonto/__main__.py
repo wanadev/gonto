@@ -1,11 +1,11 @@
 import sys
 import argparse
-import time
+import subprocess
 
 from . import APPLICATION_NAME, VERSION
 from .log import logger
 from .config import read_config, validate_config
-from .target import Target
+from .target import Target, SCRIPT_TYPE
 
 
 def generate_run_subcommand_cli(subparsers: argparse._SubParsersAction) -> None:
@@ -84,8 +84,18 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
         sys.exit(1)
 
     target = Target(args.target, config)
+    script_error = False
 
-    # TODO run before_script (opt)
+    if target.has_script(SCRIPT_TYPE.BEFORE_SCRIPT):
+        print("Running before script...")
+        try:
+            target.run_script(SCRIPT_TYPE.BEFORE_SCRIPT)
+        except subprocess.CalledProcessError as error:
+            logger.error("Before script terminated with an error: %s" % str(error))
+            script_error = True
+
+    if script_error:
+        sys.exit(1)
 
     print("Checking requirements...")
     images = [img["path"] for img in target.list_required_images()]
@@ -134,13 +144,27 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
         print("Mounting requirements...")
         target.mount_images()
 
-    time.sleep(3)  # TODO run script
+    print("Running script...")
+    try:
+        target.run_script(SCRIPT_TYPE.SCRIPT)
+    except subprocess.CalledProcessError as error:
+        logger.error("Script terminated with an error: %s" % str(error))
+        script_error = True
 
     if images:
         print("Unmounting requirements...")
         target.umount_images()
 
-    # TODO run after script (opt)
+    if target.has_script(SCRIPT_TYPE.AFTER_SCRIPT) and not script_error:
+        print("Running after script...")
+        try:
+            target.run_script(SCRIPT_TYPE.AFTER_SCRIPT)
+        except subprocess.CalledProcessError as error:
+            logger.error("After script terminated with an error: %s" % str(error))
+            script_error = True
+
+    if script_error:
+        sys.exit(1)
 
 
 def subcommand_list(config: dict, args: argparse.Namespace) -> None:
