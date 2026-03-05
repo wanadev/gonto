@@ -88,8 +88,8 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
     # TODO run before_script (opt)
 
     print("Checking requirements...")
-    images = list([img["path"] for img in target.list_required_images()])
-    uncached_images = list([img["path"] for img in target.list_missing_images()])
+    images = [img["path"] for img in target.list_required_images()]
+    uncached_images = [img["path"] for img in target.list_missing_images()]
 
     if images:
         for image in images:

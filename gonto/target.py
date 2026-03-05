@@ -1,4 +1,5 @@
 import os
+import time
 from enum import StrEnum
 from pathlib import Path
 from collections.abc import Iterator
@@ -24,6 +25,14 @@ class TargetDoesNotExist(ValueError):
 
 
 class MissingImage(Exception):
+    pass
+
+
+class VolumeNotMounted(Exception):
+    pass
+
+
+class VolumeNotReady(Exception):
     pass
 
 
@@ -166,6 +175,9 @@ class Target:
         """Mount disk images required for the target.
 
         :raise MissingImage: If an image is missing from the cache.
+        :raise VolumeNotMounted: If the assignation of the drive letter failed.
+        :raise VolumeNotReady: The disk image was not attached in time or
+            contains no volumes.
         """
         cache_dir = Path(self._config["gonto"]["cache_dir"])
 
@@ -185,17 +197,44 @@ class Target:
                 else ATTACH_VIRTUAL_DISK_FLAG.NONE
             )
             diskimage.attach(attach_flags)
+
+            retries = 10
+            attached = False
+            while retries:
+                if list(diskimage.list_volumes()):
+                    attached = True
+                    break
+                retries -= 1
+                time.sleep(0.1)
+
+            if not attached:
+                raise VolumeNotReady(
+                    "Cannot attach disk image in time or disk image contains no volume: %s"
+                    % requirement["path"]
+                )
+
             self._diskimages.append(diskimage)
 
             if mount_point:
                 diskimage.mount_volume(mount_point)
-            else:
-                raise NotImplementedError(
-                    "Auto assignation of drive letter is not supported yet"
-                )  # TODO
+
+            retries = 10
+            final_mount_point = None
+            while retries:
+                final_mount_point = diskimage.get_volume_mount_point()
+                if final_mount_point:
+                    break
+                retries -= 1
+                time.sleep(0.1)
+
+            if not final_mount_point:
+                raise VolumeNotMounted(
+                    "The volume in the '%s' image was not mounted by the system in time."
+                    % requirement["path"]
+                )
 
             for name, value in requirement["env"].items():
-                value = value.replace("{{mount_point}}", mount_point)
+                value = value.replace("{{mount_point}}", final_mount_point)
                 self._env[name] = value
 
     def umount_images(self) -> None:
