@@ -419,6 +419,60 @@ class DiskImage:
         if not success:
             raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
 
+    def get_volume_mount_point(self, volume_name: str | None = None) -> str | None:
+        """Get the mount point of the given volume.
+
+        :param volume_name: The name of a volume in the image disk or ``None``
+            for the first volume of the image disk.
+
+        :raise DiskImageNotOpened: If no virtual disk image was opened using
+            the :py:meth:`DiskImage.open` method.
+        :raise DiskImageNotAttached: If the virtual disk image was not attached
+            using the :py:meth:`DiskImage.attach` method.
+        :raise VolumeNotInDiskImage: If the given volume name does not belong
+            to the current disk image.
+        :raise WindowsError|OSError: If a Win32 error occurs.
+
+        :return: The mount point of the volume or ``None`` if it is not mounted.
+
+            .. IMPORTANT::
+
+               For sake of simplicity, we only handle ONE mount point per volume.
+               If the volume has multiple mount points, only the first one will be
+               returned.
+        """
+        if not self._handle:
+            raise DiskImageNotOpened("No virtual disk opened")
+        if not self._attached:
+            raise DiskImageNotAttached("The disk is not attached")
+
+        if not volume_name:
+            volume_name = next(self.list_volumes())
+        else:
+            if not self.is_volume_in_disk_image(volume_name):
+                raise VolumeNotInDiskImage(
+                    "Volume not in the opened disk image: %s" % volume_name
+                )
+
+        _volume_path_names_buffer_p = ctypes.create_unicode_buffer(1024)
+        buffer_length = 1024  # WARN: Length in WCHARs
+        _return_length = ctypes.wintypes.DWORD()
+
+        success = fileapi.lib.GetVolumePathNamesForVolumeNameW(
+            volume_name,
+            _volume_path_names_buffer_p,
+            buffer_length,
+            ctypes.byref(_return_length),
+        )
+
+        if not success:
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        if not _volume_path_names_buffer_p.value:
+            return None  # Not mounted
+
+        return _volume_path_names_buffer_p.value
+
     def __del__(self) -> None:
         if not self._handle:
             return

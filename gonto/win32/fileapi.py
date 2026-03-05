@@ -91,6 +91,21 @@ def _bind_lib():
     ]
     lib.CreateFileW.restype = ctypes.wintypes.HANDLE
 
+    # https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getvolumepathnamesforvolumenamew
+    # BOOL GetVolumePathNamesForVolumeNameW(
+    #   [in]  LPCWSTR lpszVolumeName,
+    #   [out] LPWCH   lpszVolumePathNames,
+    #   [in]  DWORD   cchBufferLength,
+    #   [out] PDWORD  lpcchReturnLength
+    # );
+    lib.GetVolumePathNamesForVolumeNameW.argtypes = [
+        ctypes.wintypes.LPCWSTR,
+        ctypes.wintypes.LPWSTR,
+        ctypes.wintypes.DWORD,
+        ctypes.POINTER(ctypes.wintypes.DWORD),
+    ]
+    lib.GetVolumePathNamesForVolumeNameW.restype = ctypes.wintypes.BOOL
+
     return lib
 
 
