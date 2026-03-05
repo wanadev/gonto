@@ -5,6 +5,7 @@ Python API
    :maxdepth: 2
    :caption: Contents:
 
+   ./clihelpers.rst
    ./config.rst
    ./download.rst
    ./target.rst

@@ -189,6 +189,8 @@ class Target:
             if not image_path.is_file():
                 raise MissingImage("Missing disk image: %s" % image_path)
 
+            logger.info("Mounting '%s'..." % image_path.name)
+
             diskimage = DiskImage()
             diskimage.open(image_path)
 
@@ -234,6 +236,10 @@ class Target:
                     % requirement["path"]
                 )
 
+            logger.info(
+                "Disk image '%s' mounted to '%s'" % (image_path.name, final_mount_point)
+            )
+
             for name, value in requirement["env"].items():
                 value = value.replace("{{mount_point}}", final_mount_point)
                 self._env[name] = value
@@ -242,6 +248,8 @@ class Target:
         """Umount all disk images of the target."""
         while self._diskimages:
             diskimage = self._diskimages.pop()
+            image_path = diskimage.get_image_path()
+            logger.info("Unmounting '%s'" % image_path.name if image_path else "???")
             try:
                 diskimage.detach()
             except Exception as error:
@@ -272,7 +280,7 @@ class Target:
         ]:
             if not command:
                 continue
-            print("RUN[%s]: %s" % (script_type, command))
+            logger.info("Running command (%s): %s" % (script_type, command))
             subprocess.run(command, shell=True, check=True, env=self._env)
 
     def __repr__(self):

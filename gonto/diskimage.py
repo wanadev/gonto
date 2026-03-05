@@ -92,6 +92,7 @@ class DiskImage:
     def __init__(self):
         self._handle = None
         self._attached = False
+        self._image_path = None
 
     def open(
         self,
@@ -149,6 +150,11 @@ class DiskImage:
             raise ctypes.WinError(ret)  # type: ignore
 
         self._handle = _handle
+        self._image_path = path
+
+    def get_image_path(self) -> Path | None:
+        """Returns the disk image path (if opened)."""
+        return self._image_path
 
     def attach(
         self,
@@ -479,3 +485,9 @@ class DiskImage:
         handleapi.lib.CloseHandle(self._handle)
         self._handle = None
         self._attached = False
+
+    def __repr__(self) -> str:
+        if self._image_path:
+            return "<DiskImage '%s'>" % self._image_path.name
+        else:
+            return "<DiskImage None>"

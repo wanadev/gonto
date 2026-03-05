@@ -6,6 +6,8 @@ from . import APPLICATION_NAME, VERSION
 from .log import logger
 from .config import read_config, validate_config
 from .target import Target, SCRIPT_TYPE
+from .clihelpers import print_title, print_splashscreen
+from .clihelpers import CSI_FGCOLOR, CSI_STYLE
 
 
 def generate_run_subcommand_cli(subparsers: argparse._SubParsersAction) -> None:
@@ -86,8 +88,10 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
     target = Target(args.target, config)
     script_error = False
 
+    # Before Script
+
     if target.has_script(SCRIPT_TYPE.BEFORE_SCRIPT):
-        print("Running before script...")
+        print_title("Before Script")
         try:
             target.run_script(SCRIPT_TYPE.BEFORE_SCRIPT)
         except subprocess.CalledProcessError as error:
@@ -97,24 +101,34 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
     if script_error:
         sys.exit(1)
 
-    print("Checking requirements...")
+    # Requirement Check
+
+    print_title("Requirements Check")
     images = [img["path"] for img in target.list_required_images()]
     uncached_images = [img["path"] for img in target.list_missing_images()]
 
     if images:
         for image in images:
             print(
-                "* [%8s] %s"
+                "* [%s%8s%s] %s"
                 % (
+                    (
+                        CSI_FGCOLOR.GREEN
+                        if image not in uncached_images
+                        else CSI_FGCOLOR.YELLOW
+                    ),
                     "CACHED" if image not in uncached_images else "DOWNLOAD",
+                    CSI_STYLE.RESET,
                     image,
                 )
             )
     else:
         print("* No requirements.")
 
+    # Download
+
     if uncached_images:
-        print("Downloading missing requirements...")
+        print_title("Missing Requirement Download")
 
         def _progress_cb(
             currentdl: int, dlcount: int, image_name: str, progress: float
@@ -140,23 +154,31 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
         target.download_missing_images(_progress_cb)
         print("\r%s" % (" " * 40))
 
+    # Mount
+
     if images:
-        print("Mounting requirements...")
+        print_title("Disk Image Mount")
         target.mount_images()
 
-    print("Running script...")
+    # Main Script
+
+    print_title("Main Script")
     try:
         target.run_script(SCRIPT_TYPE.SCRIPT)
     except subprocess.CalledProcessError as error:
         logger.error("Script terminated with an error: %s" % str(error))
         script_error = True
 
+    # Unmount
+
     if images:
-        print("Unmounting requirements...")
+        print_title("Disk Image Unmount")
         target.umount_images()
 
+    # After Script
+
     if target.has_script(SCRIPT_TYPE.AFTER_SCRIPT) and not script_error:
-        print("Running after script...")
+        print_title("After Script")
         try:
             target.run_script(SCRIPT_TYPE.AFTER_SCRIPT)
         except subprocess.CalledProcessError as error:
@@ -180,6 +202,8 @@ def subcommand_list(config: dict, args: argparse.Namespace) -> None:
 def main(args=sys.argv[1:]):
     parser = generate_cli()
     parsed_args = parser.parse_args(args)
+
+    print_splashscreen(version=VERSION)
 
     config = read_config()
     logger.debug("Final config: %s" % str(config))
