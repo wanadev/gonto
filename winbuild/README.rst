@@ -24,12 +24,12 @@ dependencies:
     ``Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))``
   * NOTE: all ``choco`` commands should be run as administrator
 
-* Python 3.11:
+* Python 3.13:
 
   * 64bit version
   * Must be added to the PATH (there is a checkbox during the installation)
   * Download: https://www.python.org/
-  * Choco: ``choco install python``
+  * Choco: ``choco install python313``
 
 * Git:
 

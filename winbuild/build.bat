@@ -1,7 +1,7 @@
 :: Make and/or activate the virtualenv
 IF NOT EXIST build\__env__ (
     mkdir build
-    python -m venv build\__env__
+    python3.13 -m venv build\__env__
 )
 CALL build\__env__\Scripts\activate.bat
 
@@ -13,12 +13,14 @@ pip install .
 
 :: Compile with nuitka
 python -m nuitka ^
+    --mode=standalone ^
     --follow-imports ^
+    --python-flag=-O,isolated ^
     --assume-yes-for-downloads ^
-    --windows-console-mode=attach ^
+    --windows-console-mode=force ^
     --windows-uac-admin ^
     --windows-icon-from-ico=winbuild\gonto.ico ^
-    --standalone ^
+    --output-filename=gonto.exe ^
     winbuild\gonto-win.py
 
 :: Copy additional files...
