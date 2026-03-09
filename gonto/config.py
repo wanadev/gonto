@@ -6,6 +6,7 @@ import yaml
 import jsonschema
 
 from .log import logger
+from .helpers import dict_merge
 
 _CONFIG_FILES = [
     "gonto.yaml",
@@ -170,7 +171,6 @@ def read_config() -> dict:
 
     for config_file_path in config_file_paths:
         with open(config_file_path, "rb") as config_file:
-            # TODO: improve deep merge of dicts
-            config.update(yaml.load(config_file, Loader=yaml.SafeLoader))
+            dict_merge(config, yaml.load(config_file, Loader=yaml.SafeLoader) or {})
 
     return config
