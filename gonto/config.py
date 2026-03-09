@@ -16,10 +16,12 @@ _CONFIG_FILES = [
 ]
 
 _CONFIG_DIRS = [
-    Path(__file__).parent,  # Gonto install dir
+    Path(__file__).parent.parent,  # Gonto install dir (Nuitka build)
     Path("~").expanduser(),  # User's home dir
     Path(".").absolute(),  # Current dir (project dir)
 ]
+
+logger.debug("Searching configs from: %s" % str(_CONFIG_DIRS))
 
 #: Default configuration
 DEFAULT_CONFIG = {
