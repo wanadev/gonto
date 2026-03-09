@@ -249,7 +249,7 @@ class Target:
         while self._diskimages:
             diskimage = self._diskimages.pop()
             image_path = diskimage.get_image_path()
-            logger.info("Unmounting '%s'" % image_path.name if image_path else "???")
+            logger.info("Unmounting '%s'" % (image_path.name if image_path else "???"))
             try:
                 diskimage.detach()
             except Exception as error:
