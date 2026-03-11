@@ -8,6 +8,11 @@ from .config import read_config, validate_config
 from .target import Target, SCRIPT_TYPE
 from .clihelpers import print_title, print_splashscreen
 from .clihelpers import CSI_FGCOLOR, CSI_STYLE
+from .clihelpers import ProgressBar
+
+# Used for later to display progress
+# Not pretty but we have to keep a global ref...
+_progressbar: ProgressBar
 
 
 def generate_run_subcommand_cli(subparsers: argparse._SubParsersAction) -> None:
@@ -133,23 +138,23 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
         def _progress_cb(
             currentdl: int, dlcount: int, image_name: str, progress: float
         ) -> None:
-            if progress == 0:
-                print(
-                    "\r* Downloading '%s'... (%i/%i)"
+            global _progressbar
+            if progress == 0.0:
+                _progressbar = ProgressBar(
+                    text="* Downloading '%s'... (%i/%i)"
                     % (
                         image_name,
                         currentdl,
                         dlcount,
-                    )
+                    ),
+                    margin_left=2,
                 )
-            sys.stdout.write(
-                "\r  [%-20s] %.2f %%  "
-                % (
-                    "=" * int(progress * 20),
-                    progress * 100,
-                )
-            )
-            sys.stdout.flush()
+                _progressbar.start()
+            elif int(progress) == 1:
+                _progressbar.update(progress)
+                _progressbar.finish()
+            else:
+                _progressbar.update(progress)
 
         target.download_missing_images(_progress_cb)
         print("\r%s" % (" " * 40))
