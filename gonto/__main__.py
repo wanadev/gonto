@@ -157,7 +157,6 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
                 _progressbar.update(progress)
 
         target.download_missing_images(_progress_cb)
-        print("\r%s" % (" " * 40))
 
     # Mount
 

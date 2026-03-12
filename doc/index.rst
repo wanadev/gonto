@@ -13,5 +13,6 @@ Gonto documentation
    ./config.rst
    ./repo.rst
    ./env.rst
+   ./faq.rst
    ./python_api/index.rst
    ./winbuild.rst
