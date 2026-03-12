@@ -59,3 +59,15 @@ Changelog
 * **[NEXT]** (changes on ``master``, but not released yet):
 
   * Nothing yet ;)
+
+* **v0.1.0 (initial release):**
+
+  * feat: Multiple config files with overrides (``gonto.yaml``)
+  * feat: List targets (``gonto list``)
+  * feat: Run target (``gonto run <TARGET>``):
+
+    * Download missing VHDs from a repository
+    * VHD cache
+    * Mount/Unmount VHDs
+    * before_script/script/after_script
+    * Handle environment variable with dynamic replacement of the mount point
