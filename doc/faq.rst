@@ -8,18 +8,18 @@ On Windows the console encoding may not be specified when running as service acc
 
     UnicodeEncodeError: 'charmap' codec can't encode characters in position 18-24: character maps to <undefined>
 
-To fix this error, you can force UTF-8 encoding using the ``PYTHONUTF8=1`` environment variable before running Gonto.
+To fix this error, you can force UTF-8 encoding using the ``PYTHONIOENCODING=utf-8`` environment variable before running Gonto.
 
 Powershell:
 
 .. code-block:: ps1
 
-   $env:PYTHONUTF8=1
+   $env:PYTHONIOENCODING=utf-8
    .\gonto.exe ...
 
 CMD.exe:
 
 .. code-block:: bat
 
-   set PYTHONUTF8=1
+   set PYTHONIOENCODING=utf-8
    .\gonto.exe ...
