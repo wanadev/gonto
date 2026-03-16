@@ -150,13 +150,17 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
                     margin_left=2,
                 )
                 _progressbar.start()
-            elif int(progress) == 1:
+            elif progress == 1.0:
                 _progressbar.update(progress)
                 _progressbar.finish()
             else:
                 _progressbar.update(progress)
 
-        target.download_missing_images(_progress_cb)
+        try:
+            target.download_missing_images(_progress_cb)
+        except IOError as error:
+            logger.error("An error occurred when downloading images: %s" % str(error))
+            sys.exit(1)
 
     # Mount
 

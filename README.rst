@@ -58,7 +58,7 @@ Changelog
 
 * **[NEXT]** (changes on ``master``, but not released yet):
 
-  * Nothing yet ;)
+  * fix(download): Do not continue running target on incomplete download
 
 * **v0.1.0 (initial release):**
 
