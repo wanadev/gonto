@@ -58,6 +58,10 @@ Changelog
 
 * **[NEXT]** (changes on ``master``, but not released yet):
 
+  * Nothing yet ;)
+
+* **v0.1.1:**
+
   * fix(download): Do not continue running target on incomplete download
   * misc(winbuild): Build with unbuffered output option
 
