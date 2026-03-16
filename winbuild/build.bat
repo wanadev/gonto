@@ -15,7 +15,7 @@ pip install .
 python -m nuitka ^
     --mode=standalone ^
     --follow-imports ^
-    --python-flag=-O,isolated ^
+    --python-flag=isolated,unbuffered ^
     --assume-yes-for-downloads ^
     --windows-console-mode=force ^
     --windows-uac-admin ^
