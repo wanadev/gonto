@@ -5,6 +5,10 @@
 __pycache__/
 *.pyc
 
+# Nuitka
+/*.build
+/*.dist
+
 # Gonto config
 gonto.yaml
 gonto.yml
