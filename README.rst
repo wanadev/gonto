@@ -58,7 +58,7 @@ Changelog
 
 * **[NEXT]** (changes on ``master``, but not released yet):
 
-  * Nothing yet ;)
+  * feat: Added "mount" command to download and permanently mount targets images
 
 * **v0.1.1:**
 

@@ -172,8 +172,11 @@ class Target:
                 ),
             )
 
-    def mount_images(self) -> None:
+    def mount_images(self, permanent: bool = False) -> None:
         """Mount disk images required for the target.
+
+        :param permanent: Defines whether the mount is permanent or not
+            (persisted after Gonto exit).
 
         :raise MissingImage: If an image is missing from the cache.
         :raise VolumeNotMounted: If the assignation of the drive letter failed.
@@ -194,11 +197,12 @@ class Target:
             diskimage = DiskImage()
             diskimage.open(image_path)
 
-            attach_flags = (
-                ATTACH_VIRTUAL_DISK_FLAG.NO_DRIVE_LETTER
-                if mount_point
-                else ATTACH_VIRTUAL_DISK_FLAG.NONE
-            )
+            attach_flags = ATTACH_VIRTUAL_DISK_FLAG.NONE
+            if permanent:
+                attach_flags |= ATTACH_VIRTUAL_DISK_FLAG.PERMANENT_LIFETIME
+            if mount_point:
+                attach_flags |= ATTACH_VIRTUAL_DISK_FLAG.NO_DRIVE_LETTER
+
             diskimage.attach(attach_flags)
 
             retries = 10

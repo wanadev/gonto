@@ -45,6 +45,24 @@ def generate_list_subcommand_cli(subparsers: argparse._SubParsersAction) -> None
     )
 
 
+def generate_mount_subcommand_cli(subparsers: argparse._SubParsersAction) -> None:
+    """Generates the CLI for the "mount" subcommand.
+
+    :param subparsers: The subparsers action instance as given by
+        ``argparse.ArgumentParser.add_subparsers()``.
+    """
+    parser = subparsers.add_parser(
+        "mount",
+        help="mount disk images of the given target (without running scripts)",
+    )
+
+    parser.add_argument(
+        "target",
+        help="the target whose images will be mounted",
+        type=str,
+    )
+
+
 def generate_cli() -> argparse.ArgumentParser:
     """Generates the CLI.
 
@@ -65,47 +83,19 @@ def generate_cli() -> argparse.ArgumentParser:
 
     generate_run_subcommand_cli(subparsers)
     generate_list_subcommand_cli(subparsers)
+    generate_mount_subcommand_cli(subparsers)
 
     return parser
 
 
-def subcommand_run(config: dict, args: argparse.Namespace) -> None:
-    """Run the "run" subcommand.
+def _requirement_check_and_download(target: Target) -> bool:
+    """Check if requirements are fulfilled and download missing images.
 
-    Actions:
+    :param target: The current target.
 
-    * Run ``before_script`` commands,
-    * Check if required disk images are available in the cache,
-    * Download missing disk images from configured repository,
-    * Mount all disk images in order,
-    * Run ``script`` commands,
-    * Unmount disk images,
-    * Run ``after_script`` commands.
-
-    :param config: The final configuration.
-    :param args: The args parsed by ``argparse.ArgumentParser.parse_args()``.
+    :returns: ``True`` if the targets has disk image requirements,
+        ``False`` else.
     """
-
-    if args.target not in config["targets"]:
-        logger.error("Target '%s' does not exist." % args.target)
-        sys.exit(1)
-
-    target = Target(args.target, config)
-    script_error = False
-
-    # Before Script
-
-    if target.has_script(SCRIPT_TYPE.BEFORE_SCRIPT):
-        print_title("Before Script")
-        try:
-            target.run_script(SCRIPT_TYPE.BEFORE_SCRIPT)
-        except subprocess.CalledProcessError as error:
-            logger.error("Before script terminated with an error: %s" % str(error))
-            script_error = True
-
-    if script_error:
-        sys.exit(1)
-
     # Requirement Check
 
     print_title("Requirements Check")
@@ -162,9 +152,53 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
             logger.error("An error occurred when downloading images: %s" % str(error))
             sys.exit(1)
 
+    return bool(images)
+
+
+def subcommand_run(config: dict, args: argparse.Namespace) -> None:
+    """Run the "run" subcommand.
+
+    Actions:
+
+    * Run ``before_script`` commands,
+    * Check if required disk images are available in the cache,
+    * Download missing disk images from configured repository,
+    * Mount all disk images in order,
+    * Run ``script`` commands,
+    * Unmount disk images,
+    * Run ``after_script`` commands.
+
+    :param config: The final configuration.
+    :param args: The args parsed by ``argparse.ArgumentParser.parse_args()``.
+    """
+
+    if args.target not in config["targets"]:
+        logger.error("Target '%s' does not exist." % args.target)
+        sys.exit(1)
+
+    target = Target(args.target, config)
+    script_error = False
+
+    # Before Script
+
+    if target.has_script(SCRIPT_TYPE.BEFORE_SCRIPT):
+        print_title("Before Script")
+        try:
+            target.run_script(SCRIPT_TYPE.BEFORE_SCRIPT)
+        except subprocess.CalledProcessError as error:
+            logger.error("Before script terminated with an error: %s" % str(error))
+            script_error = True
+
+    if script_error:
+        sys.exit(1)
+
+    # Requirement Check & Download
+
+    target_has_image = _requirement_check_and_download(target)
+
     # Mount
 
-    if images:
+    if target_has_image:
         print_title("Disk Image Mount")
         target.mount_images()
 
@@ -179,7 +213,7 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
 
     # Unmount
 
-    if images:
+    if target_has_image:
         print_title("Disk Image Unmount")
         target.umount_images()
 
@@ -207,6 +241,26 @@ def subcommand_list(config: dict, args: argparse.Namespace) -> None:
         print(target)
 
 
+def subcommand_mount(config: dict, args: argparse.Namespace) -> None:
+    """Run the "mount" subcommand.
+
+    :param config: The final configuration.
+    :param args: The args parsed by ``argparse.ArgumentParser.parse_args()``.
+    """
+    if args.target not in config["targets"]:
+        logger.error("Target '%s' does not exist." % args.target)
+        sys.exit(1)
+
+    target = Target(args.target, config)
+    target_has_image = _requirement_check_and_download(target)
+
+    if target_has_image:
+        print_title("Disk Image Mount")
+        target.mount_images(permanent=True)
+    else:
+        print("Target has no images...")
+
+
 def main(args=sys.argv[1:]):
     parser = generate_cli()
     parsed_args = parser.parse_args(args)
@@ -224,6 +278,8 @@ def main(args=sys.argv[1:]):
         subcommand_run(config, parsed_args)
     elif parsed_args.subcommand == "list":
         subcommand_list(config, parsed_args)
+    elif parsed_args.subcommand == "mount":
+        subcommand_mount(config, parsed_args)
 
 
 if __name__ == "__main__":
