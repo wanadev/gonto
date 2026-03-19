@@ -8,4 +8,4 @@ APPLICATION_SHORT_ID = APPLICATION_ID.split(".")[-1]
 APPLICATION_NAME = "Gonto"
 
 #: Version of the application
-VERSION = "0.1.1"
+VERSION = "0.2.0"
