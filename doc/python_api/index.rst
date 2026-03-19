@@ -5,12 +5,13 @@ Python API
    :maxdepth: 2
    :caption: Contents:
 
-   ./clihelpers.rst
    ./config.rst
    ./download.rst
    ./target.rst
    ./diskimage.rst
    ./log.rst
+   ./clihelpers.rst
+   ./reghelpers.rst
    ./win32/index.rst
 
 
