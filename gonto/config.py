@@ -74,17 +74,23 @@ CONFIG_SCHEMA = {
                                     "platform": {
                                         "type": "string",
                                         "enum": ["win64", "win32", "multi"],
+                                        "default": "win64",
                                     },
                                     "format": {
                                         "type": "string",
                                         "enum": ["vhd", "vhdx"],
+                                        "default": "vhd",
                                     },
                                     "mount_point": {
                                         "type": "string",
                                         "pattern": r"^(|[D-Z]:\\)$",
+                                        "default": "",
                                     },
                                     "env": {
                                         "$ref": "#/$defs/env",
+                                    },
+                                    "reg": {
+                                        "$ref": "#/$defs/reg",
                                     },
                                 },
                                 "required": ["name", "version"],
@@ -117,6 +123,79 @@ CONFIG_SCHEMA = {
                 "^[a-zA-Z_]+[a-zA-Z0-9_]*$": {
                     "type": "string",
                 }
+            },
+        },
+        "reg": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "root": {
+                        "type": "string",
+                        "enum": [
+                            "HKEY_CLASSES_ROOT",
+                            "HKEY_CURRENT_CONFIG",
+                            "HKEY_CURRENT_USER",
+                            "HKEY_DYN_DATA",
+                            "HKEY_LOCAL_MACHINE",
+                            "HKEY_PERFORMANCE_DATA",
+                            "HKEY_USERS",
+                        ],
+                    },
+                    "path": {
+                        "type": "string",
+                        "default": "",
+                    },
+                    "name": {
+                        "type": "string",
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "REG_DWORD",
+                            "REG_DWORD_LITTLE_ENDIAN",
+                            "REG_DWORD_BIG_ENDIAN",
+                            "REG_QWORD",
+                            "REG_QWORD_LITTLE_ENDIAN",
+                            "REG_SZ",
+                            "REG_EXPAND_SZ",
+                            "REG_MULTI_SZ",
+                        ],
+                        "default": "REG_SZ",
+                    },
+                    "data": {
+                        # Validation of type in "if/then/else" below
+                        # NOTE: if "type" is not defined, the "then" branch is
+                        #       used for validation (default value is ignored).
+                    },
+                },
+                "if": {
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "REG_SZ",
+                                "REG_EXPAND_SZ",
+                                "REG_MULTI_SZ",
+                            ],
+                        },
+                    },
+                },
+                "then": {
+                    "properties": {
+                        "data": {
+                            "type": "string",
+                        },
+                    },
+                },
+                "else": {
+                    "properties": {
+                        "data": {
+                            "type": "integer",
+                        },
+                    },
+                },
+                "required": ["root", "name", "data"],
             },
         },
     },
