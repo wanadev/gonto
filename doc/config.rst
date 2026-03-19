@@ -47,6 +47,59 @@ Example Gonto configuration file:
               # {{mount_point}} place holder that will be replaced by the
               # drive letter the volume is mounted on.
               UNREAL_PATH: "{{mount_point}}"
+            reg:
+              # Set registry keys right after the image is mounted.
+              # {{mount_point}} place holder will be replaced by the drive letter
+              # the volume is mounted on.
+              #
+              # WARNING:
+              #
+              #   Registry keys are never cleaned by Gonto!
+              #
+              # Supported root keys:
+              #
+              #   HKEY_CLASSES_ROOT
+              #   HKEY_CURRENT_CONFIG
+              #   HKEY_CURRENT_USER
+              #   HKEY_DYN_DATA
+              #   HKEY_LOCAL_MACHINE
+              #   HKEY_PERFORMANCE_DATA
+              #   HKEY_USERS
+              #
+              # For a description of root keys, see:
+              #
+              #   https://docs.python.org/3/library/winreg.html#hkey-constants
+              #
+              # Supported value types:
+              #
+              #   Strings:
+              #
+              #     REG_SZ
+              #     REG_EXPAND_SZ
+              #     REG_MULTI_SZ
+              #
+              #   Numbers:
+              #
+              #     REG_DWORD
+              #     REG_DWORD_LITTLE_ENDIAN
+              #     REG_DWORD_BIG_ENDIAN
+              #     REG_QWORD
+              #     REG_QWORD_LITTLE_ENDIAN
+              #
+              # For a description of value types, see:
+              #
+              #   https://docs.python.org/3/library/winreg.html#value-types
+              #
+              - root: "HKEY_LOCAL_MACHINE"  # Root key, required.
+                path: "SOFTWARE\\Gonto"     # Path of the subkey (optional, default: "")
+                name: "MyValue"             # Name of the value, required.
+                type: "REG_DWORD"           # Type of the value (optional, default: "REG_SZ")
+                data: 42                    # Data of the value, required.
+              - root: "HKEY_CURRENT_USER"
+                path: "Software\\Epic Games\\Unreal Engine\\Builds"
+                name: "5.4"
+                type: "REG_SZ"
+                data: "{{mount_point}}"
           # Dependency 2
           - name: "android"
             version: "36"

@@ -59,6 +59,7 @@ Changelog
 * **[NEXT]** (changes on ``master``, but not released yet):
 
   * feat: Added "mount" command to download and permanently mount targets images
+  * feat: Added "reg" option to requirements allowing to set registry key after mounting disk images
 
 * **v0.1.1:**
 

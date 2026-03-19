@@ -10,6 +10,7 @@ from typing import Any
 from .log import logger
 from .download import http_get
 from .diskimage import DiskImage
+from .reghelpers import set_winreg_value
 from .win32.virtdisk import ATTACH_VIRTUAL_DISK_FLAG
 
 
@@ -99,6 +100,7 @@ class Target:
                     "format": "vhd",
                     "mount_point": "",
                     "env": {},
+                    "reg": [],
                 }
         """
         if "requires" not in self._target:
@@ -112,6 +114,7 @@ class Target:
                 "format": requirement.get("format", "vhd"),
                 "mount_point": requirement.get("mount_point", ""),
                 "env": dict(requirement.get("env", {})),
+                "reg": list(requirement.get("reg", [])),
             }
 
     def list_missing_images(self) -> Iterator[dict[str, Any]]:
@@ -129,6 +132,7 @@ class Target:
                     "format": "vhd",
                     "mount_point": "",
                     "env": {},
+                    "reg": [],
                 }
         """
         for image in self.list_required_images():
@@ -247,6 +251,23 @@ class Target:
             for name, value in requirement["env"].items():
                 value = value.replace("{{mount_point}}", final_mount_point)
                 self._env[name] = value
+
+            for regvalue in requirement["reg"]:
+                root = regvalue["root"]
+                path = regvalue.get("path", None)
+                name = regvalue["name"]
+                type_ = regvalue.get("type", "REG_SZ")
+                data = regvalue["data"]
+
+                if type_ in ["REG_SZ", "REG_EXPAND_SZ", "REG_MULTI_SZ"]:
+                    data = data.replace("{{mount_point}}", final_mount_point)
+
+                logger.info(
+                    "Creating registry key: '%s:\\%s\\%s' = (%s) %s"
+                    % (root, path or "", name, type_, str(data))
+                )
+
+                set_winreg_value(root, path, name, type_, data)
 
     def umount_images(self) -> None:
         """Umount all disk images of the target."""
