@@ -52,6 +52,10 @@ Example Gonto configuration file:
               # {{mount_point}} place holder will be replaced by the drive letter
               # the volume is mounted on.
               #
+              # WARNING:
+              #
+              #   Registry keys are never cleaned by Gonto!
+              #
               # Supported root keys:
               #
               #   HKEY_CLASSES_ROOT
