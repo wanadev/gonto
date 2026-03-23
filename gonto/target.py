@@ -263,7 +263,7 @@ class Target:
                     data = data.replace("{{mount_point}}", final_mount_point)
 
                 logger.info(
-                    "Creating registry key: '%s:\\%s\\%s' = (%s) %s"
+                    "Creating registry key: '%s:\\%s\\%s' = (%s) '%s'"
                     % (root, path or "", name, type_, str(data))
                 )
 
