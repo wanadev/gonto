@@ -285,7 +285,7 @@ def _bind_lib():
         #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-security_descriptor
         ctypes.wintypes.DWORD,
         ctypes.wintypes.ULONG,
-        ctypes.POINTER(CreateVirtualDiskParametersVersion1),  # XXX v2 not binded yet
+        ctypes.POINTER(CreateVirtualDiskParametersVersion1),  # XXX v2 not bound yet
         ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
         #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-overlapped
         ctypes.wintypes.PHANDLE,
