@@ -11,17 +11,17 @@ from enum import IntEnum, Enum, IntFlag
 # =============================================================================
 
 
-class VIRTUAL_STORAGE_TYPE_DEVICE(IntEnum):
+class VIRTUAL_STORAGE_TYPE(IntEnum):
     """Device type identifier.
 
     See: https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ns-virtdisk-virtual_storage_type#members
     """
 
     # fmt: off
-    UNKNOWN = 0
-    ISO     = 1
-    VHD     = 2
-    VHDX    = 3
+    DEVICE_UNKNOWN = 0
+    DEVICE_ISO     = 1
+    DEVICE_VHD     = 2
+    DEVICE_VHDX    = 3
     # fmt: on
 
 

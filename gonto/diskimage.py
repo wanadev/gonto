@@ -44,9 +44,9 @@ from .win32.const import ACCESS_MASK
 from .win32.const import FILE_SHARE
 
 _ext_to_device_type = {
-    ".iso": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.ISO,
-    ".vhd": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.VHD,
-    ".vhdx": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.VHDX,
+    ".iso": virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_ISO,
+    ".vhd": virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_VHD,
+    ".vhdx": virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_VHDX,
 }
 
 
@@ -97,7 +97,7 @@ class DiskImage:
     def open(
         self,
         path: Path | str,
-        device_type: virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE | None = None,
+        device_type: virtdisk.VIRTUAL_STORAGE_TYPE | None = None,
         access_mask: virtdisk.VIRTUAL_DISK_ACCESS_MASK = virtdisk.VIRTUAL_DISK_ACCESS_MASK.ALL,
         open_flags: virtdisk.OPEN_VIRTUAL_DISK_FLAG = virtdisk.OPEN_VIRTUAL_DISK_FLAG.NONE,
     ) -> None:
@@ -127,7 +127,7 @@ class DiskImage:
             if ext in _ext_to_device_type:
                 device_type = _ext_to_device_type[ext]
             else:
-                device_type = virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.UNKNOWN
+                device_type = virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_UNKNOWN
 
         _virtual_storage_type = virtdisk.VirtualStorageType(
             device_id=device_type.value,
