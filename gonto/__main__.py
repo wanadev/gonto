@@ -63,6 +63,47 @@ def generate_mount_subcommand_cli(subparsers: argparse._SubParsersAction) -> Non
     )
 
 
+def generate_create_subcommand_cli(subparsers: argparse._SubParsersAction) -> None:
+    """Generates the CLI for the "create" subcommand.
+
+    :param subparsers: The subparsers action instance as given by
+        ``argparse.ArgumentParser.add_subparsers()``.
+    """
+    parser = subparsers.add_parser(
+        "create",
+        help="create a new disk image with given content",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--overprovisioning",
+        help="additional disk space to provision (in GiB)",
+        type=int,
+        default=0,
+        metavar="SPACE",
+    )
+
+    parser.add_argument(
+        "-l",
+        "--label",
+        help="label of the disk image (default: 'Gonto image')",
+        type=str,
+        default="Gonto image",
+    )
+
+    parser.add_argument(
+        "INPUT_FOLDER",
+        help="path of the folder that contains files to copy into the disk image",
+        type=str,
+    )
+
+    parser.add_argument(
+        "OUTPUT_IMAGE",
+        help="path of the output image file",
+        type=str,
+    )
+
+
 def generate_cli() -> argparse.ArgumentParser:
     """Generates the CLI.
 
@@ -81,9 +122,10 @@ def generate_cli() -> argparse.ArgumentParser:
         required=True,
     )
 
-    generate_run_subcommand_cli(subparsers)
     generate_list_subcommand_cli(subparsers)
+    generate_run_subcommand_cli(subparsers)
     generate_mount_subcommand_cli(subparsers)
+    generate_create_subcommand_cli(subparsers)
 
     return parser
 
@@ -261,6 +303,14 @@ def subcommand_mount(config: dict, args: argparse.Namespace) -> None:
         print("Target has no images...")
 
 
+def subcommand_create(args: argparse.Namespace) -> None:
+    """Run the "create" subcommand.
+
+    :param args: The args parsed by ``argparse.ArgumentParser.parse_args()``.
+    """
+    raise NotImplementedError()  # XXX
+
+
 def main(args=sys.argv[1:]):
     parser = generate_cli()
     parsed_args = parser.parse_args(args)
@@ -280,6 +330,8 @@ def main(args=sys.argv[1:]):
         subcommand_list(config, parsed_args)
     elif parsed_args.subcommand == "mount":
         subcommand_mount(config, parsed_args)
+    elif parsed_args.subcommand == "create":
+        subcommand_create(parsed_args)
 
 
 if __name__ == "__main__":
