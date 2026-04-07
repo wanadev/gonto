@@ -53,6 +53,7 @@ class FMIFS_PACKET_TYPE(IntEnum):
     CHECK_ON_REBOOT          = 0x0D
     TEXT_MESSAGE             = 0x0E
     HIDDEN_STATUS            = 0x0F
+    UNKNOWN_37               = 0x25
     # fmt: on
 
 
@@ -71,6 +72,7 @@ class FmifsFinishedInformation(ctypes.Structure):
 
     _fields_ = [
         ("success", ctypes.wintypes.BOOLEAN),
+        ("unknown_dword", ctypes.wintypes.DWORD),  # Error code?
     ]
 
 
