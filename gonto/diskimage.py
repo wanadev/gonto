@@ -325,13 +325,24 @@ class DiskImage:
 
         # Create new partition (full disk size)
 
+        # Align to 1 MiB (required for NTFS formatting)
+        _1MiB = 1024 * 1024
+        partition_start_offset = (
+            (_drive_layout.starting_usable_offset + _1MiB - 1) // _1MiB
+        ) * _1MiB
+        partition_end_offset = (
+            (_drive_layout.starting_usable_offset + _drive_layout.usable_length)
+            // _1MiB
+        ) * _1MiB
+        partition_length = partition_end_offset - partition_start_offset
+
         _drive_layout.partition_count = 1
 
         _pe = _drive_layout.partition_entry[0]
         _pe.partition_style = winioctl.PARTITION_STYLE.GPT
         _pe.partition_ordinal = 0
-        _pe.starting_offset = _drive_layout.starting_usable_offset
-        _pe.partition_length = _drive_layout.usable_length
+        _pe.starting_offset = partition_start_offset
+        _pe.partition_length = partition_length
         _pe.partition_number = 1
         _pe.rewrite_partition = True
         _pe.is_service_partition = False
