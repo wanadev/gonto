@@ -9,6 +9,7 @@ Bindings for Win32 APIs.
 
    ./const.rst
    ./fileapi.rst
+   ./fmifs.rst
    ./handleapi.rst
    ./ioapiset.rst
    ./virtdisk.rst
