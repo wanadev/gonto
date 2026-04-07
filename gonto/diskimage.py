@@ -40,10 +40,13 @@ from .win32 import ioapiset
 from .win32 import virtdisk
 from .win32 import winbase
 from .win32 import winioctl
+from .win32 import fmifs
 from .win32.const import ERROR_SUCCESS
 from .win32.const import ERROR_NO_MORE_FILES
 from .win32.const import ACCESS_MASK
 from .win32.const import FILE_SHARE
+
+from .log import logger, DEBUG
 
 _ext_to_device_type = {
     ".iso": virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_ISO,
@@ -172,7 +175,16 @@ class DiskImage:
         :param path: Path to the disk image.
         :param size: Size of the image disk in GiB.
         :param label: Label of the partition in the disk image (default:
-            ``None`` (no label))
+            ``None`` (no label)).
+
+            .. NOTE::
+
+               The label name must be 32 char long maximum (it will be
+               truncated if longer).
+
+               Only characters allowed in file names are allowed in the
+               label.
+
         :param device_type: The type of the disk image (default: ``None``
             (guessed from file extension), currently only VHD is supported).
 
@@ -392,18 +404,99 @@ class DiskImage:
             retries -= 1
             time.sleep(0.1)
 
-        if not retries and not list(self.list_volumes()):
+        volumes = list(self.list_volumes())
+
+        if not retries and not volumes:
             handleapi.lib.CloseHandle(_disk_handle)
             self.detach()
             raise VolumeEnumerationTimeout("Volumes not available in time")
 
-        # TODO format the partition to NTFS with label
+        handleapi.lib.CloseHandle(_disk_handle)
+
+        # Format the partition to NTFS with label
+
+        format_success = False
+        format_cb_error = None
+
+        def _format_cb(packet_type, packet_length, packet_data):
+            nonlocal format_success
+            nonlocal format_cb_error
+
+            if DEBUG:
+                try:
+                    packet_type_str = fmifs.FMIFS_PACKET_TYPE(packet_type).name
+                except ValueError:
+                    packet_type_str = str(packet_type)
+                logger.debug(
+                    "DiskImage.create(): FormatEx callback: packet_type=%s, packet_length=%i, packet_data=%s"
+                    % (
+                        packet_type_str,
+                        packet_length,
+                        (
+                            ctypes.cast(packet_data, ctypes.POINTER(ctypes.c_char))[
+                                :packet_length
+                            ].hex(" ")
+                            if packet_length
+                            else "<Empty>"
+                        ),
+                    )
+                )
+
+            if packet_type == fmifs.FMIFS_PACKET_TYPE.FINISHED:
+                if packet_length != ctypes.sizeof(fmifs.FmifsFinishedInformation):
+                    format_cb_error = ValueError(
+                        "Wrong packet data length for FINISHED type. Got %i, expected %i."
+                        % (
+                            packet_length,
+                            ctypes.sizeof(fmifs.FmifsFinishedInformation),
+                        )
+                    )
+                    return False
+                finished_info = fmifs.FmifsFinishedInformation.from_address(packet_data)
+                format_success = bool(finished_info.success)
+            elif packet_type in [
+                fmifs.FMIFS_PACKET_TYPE.INCOMPATIBLE_FILE_SYSTEM,
+                fmifs.FMIFS_PACKET_TYPE.INCOMPATIBLE_MEDIA,
+                fmifs.FMIFS_PACKET_TYPE.ACCESS_DENIED,
+                fmifs.FMIFS_PACKET_TYPE.MEDIA_WRITE_PROTECTED,
+                fmifs.FMIFS_PACKET_TYPE.CANT_LOCK,
+                fmifs.FMIFS_PACKET_TYPE.CANT_QUICK_FORMAT,
+                fmifs.FMIFS_PACKET_TYPE.IO_ERROR,
+                fmifs.FMIFS_PACKET_TYPE.BAD_LABEL,
+            ]:
+                format_cb_error = OSError(
+                    "An error occured when formatting the volume. Error type: %s"
+                    % fmifs.FMIFS_PACKET_TYPE(packet_type).name
+                )
+                return False
+            return True
+
+        _format_cb_winfunct = fmifs.FMIFS_CALLBACK(_format_cb)
+
+        volume_name = volumes[0].rstrip("\\")
+        logger.debug("Formatted volume name: %s" % volume_name)
+
+        fmifs.lib.FormatEx(
+            volume_name,
+            fmifs.FMIFS_MEDIA_FLAG.HARDDISK,
+            "NTFS",
+            (label or "").strip()[:32],
+            True,  # Quick format
+            0,  # ClusterSize (0 = Windows default for NTFS)
+            _format_cb_winfunct,
+        )
+
+        if format_cb_error:
+            self.detach()
+            raise format_cb_error
+
+        if not format_success:
+            self.detach()
+            raise OSError("Partition formatting failed")
 
         # Cleanup / update class data
 
-        handleapi.lib.CloseHandle(_disk_handle)
         self.detach()
-
         self._image_path = path
 
     def get_image_path(self) -> Path | None:
