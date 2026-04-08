@@ -1,11 +1,16 @@
 import sys
 import argparse
 import subprocess
+import time
+import shutil
+from pathlib import Path
 
 from . import APPLICATION_NAME, VERSION
 from .log import logger
 from .config import read_config, validate_config
 from .target import Target, SCRIPT_TYPE
+from .diskimage import DiskImage
+from .win32.virtdisk import VIRTUAL_STORAGE_TYPE
 from .clihelpers import print_title, print_splashscreen
 from .clihelpers import CSI_FGCOLOR, CSI_STYLE
 from .clihelpers import ProgressBar
@@ -308,7 +313,81 @@ def subcommand_create(args: argparse.Namespace) -> None:
 
     :param args: The args parsed by ``argparse.ArgumentParser.parse_args()``.
     """
-    raise NotImplementedError()  # XXX
+    input_folder = Path(args.INPUT_FOLDER)
+    output_image = Path(args.OUTPUT_IMAGE)
+
+    # Checks
+
+    print_title("Preparation")
+
+    if not input_folder.is_dir():
+        logger.error(
+            "INPUT_FOLDER does not exist or is not a folder: '%s'"
+            % str(input_folder.absolute())
+        )
+        sys.exit(1)
+
+    if output_image.exists():
+        logger.error("OUTPUT_IMAGE already exists: '%s'" % str(output_image.absolute()))
+        sys.exit(1)
+
+    if not output_image.parent.is_dir():
+        logger.error(
+            "Parent folder for OUTPUT_IMAGE does not exist: '%s'"
+            % str(output_image.absolute())
+        )
+        sys.exit(1)
+
+    # Compute output image size (GiB)
+
+    image_size = 0  # TODO compute input folder size (round to sup block size?)
+    image_size += args.overprovisioning
+
+    # Create disk image
+
+    print_title("Disk Image Creation")
+
+    disk_image = DiskImage()
+    disk_image.create(
+        output_image,
+        image_size,
+        label=args.label,
+        device_type=VIRTUAL_STORAGE_TYPE.DEVICE_VHD,
+    )
+
+    # Copy files in the disk image
+
+    print_title("Copying Files")
+
+    disk_image.attach()
+
+    mount_point = None
+    retries = 10
+    while retries and not mount_point:
+        mount_point = disk_image.get_volume_mount_point()
+        retries -= 1
+        time.sleep(0.1)
+
+    if not mount_point:
+        logger.error("Unable to mount the created volume in time.")
+        sys.exit(1)
+
+    destination_folder = Path(mount_point)
+    logger.info("Source path is '%s'" % input_folder)
+    logger.info("Destination path is '%s'" % destination_folder)
+
+    def _copy(src, dst, **kwargs):
+        print("* Copying '%s' -> '%s'" % (src, dst))
+        shutil.copy2(src, dst, **kwargs)
+
+    shutil.copytree(
+        input_folder,
+        destination_folder,
+        copy_function=_copy,
+        dirs_exist_ok=True,
+    )
+
+    disk_image.detach()
 
 
 def main(args=sys.argv[1:]):
