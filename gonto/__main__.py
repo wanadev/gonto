@@ -11,6 +11,7 @@ from .config import read_config, validate_config
 from .target import Target, SCRIPT_TYPE
 from .diskimage import DiskImage
 from .win32.virtdisk import VIRTUAL_STORAGE_TYPE
+from .helpers import ntfs_disk_use
 from .clihelpers import print_title, print_splashscreen
 from .clihelpers import CSI_FGCOLOR, CSI_STYLE
 from .clihelpers import ProgressBar
@@ -340,8 +341,40 @@ def subcommand_create(args: argparse.Namespace) -> None:
 
     # Compute output image size (GiB)
 
-    image_size = 0  # TODO compute input folder size (round to sup block size?)
-    image_size += args.overprovisioning
+    print("Estimating image size...")
+
+    _1GiB = 1024 * 1024 * 1024
+    _1MiB = 1024 * 1024
+
+    estimated_size, raw_size, folder_count, file_count = ntfs_disk_use(input_folder)
+    logger.debug(
+        "Estimated NTFS disk use: %.02f GiB (%i Bytes); "
+        "Raw file size: %.02f GiB (%i Bytes); "
+        "Folder count: %i; File count: %i"
+        % (
+            estimated_size / _1GiB,
+            estimated_size,
+            raw_size / _1GiB,
+            raw_size,
+            folder_count,
+            file_count,
+        )
+    )
+
+    image_size_bytes = 0
+    image_size_bytes += 2 * _1MiB  # GPT overhead & partition alignment
+    image_size_bytes += 64 * _1MiB  # Max NTFS $LogFile size
+    image_size_bytes += 6 * _1MiB  # Large esitmation for other NTFS stuff
+    # .                            # ($Bitmap, $UpCase, $Boot, $Volume,...)
+    image_size_bytes += estimated_size  # MFT + data
+
+    image_size_giga = ((image_size_bytes + _1GiB - 1) // _1GiB) or 1
+    image_size_giga += args.overprovisioning
+
+    print(
+        "Image size: %i GiB (including %i GiB of overprovisioning)"
+        % (image_size_giga, args.overprovisioning)
+    )
 
     # Create disk image
 
@@ -350,7 +383,7 @@ def subcommand_create(args: argparse.Namespace) -> None:
     disk_image = DiskImage()
     disk_image.create(
         output_image,
-        image_size,
+        image_size_giga,
         label=args.label,
         device_type=VIRTUAL_STORAGE_TYPE.DEVICE_VHD,
     )
