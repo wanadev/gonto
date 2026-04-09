@@ -2,7 +2,8 @@
 
 import ctypes
 import ctypes.wintypes
-from enum import IntEnum
+import uuid
+from enum import Enum, IntEnum
 
 # =============================================================================
 # Helpers
@@ -53,6 +54,32 @@ class FILE_ACCESS(IntEnum):
     # fmt: on
 
 
+class PARTITION_STYLE(IntEnum):
+    """Represents the format of a partition.
+
+    See: https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ne-winioctl-partition_style
+    """
+
+    MBR = 0
+    GPT = 1
+    RAW = 2
+
+
+class PARTITION_TYPE_GUID(Enum):
+    """GUIDs that identifies partition types.
+
+    See: https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-partition_information_gpt
+    """
+
+    BASIC_DATA = uuid.UUID("ebd0a0a2-b9e5-4433-87c0-68b6b72699c7").bytes_le
+    ENTRY_UNUSED = uuid.UUID("00000000-0000-0000-0000-000000000000").bytes_le
+    SYSTEM = uuid.UUID("c12a7328-f81f-11d2-ba4b-00a0c93ec93b").bytes_le
+    MSFT_RESERVED = uuid.UUID("e3c9e316-0b5c-4db8-817d-f92df00215ae").bytes_le
+    LDM_METADATA = uuid.UUID("5808c8aa-7e8f-42e0-85d2-e1e90434cfb3").bytes_le
+    LDM_DATA = uuid.UUID("af9b60a0-1431-4f62-bc68-3311714a69ad").bytes_le
+    MSFT_RECOVERY = uuid.UUID("de94bba4-06d1-4d40-a16a-bfd50179d6ac").bytes_le
+
+
 # =============================================================================
 # Structures
 # =============================================================================
@@ -84,6 +111,106 @@ class VolumeDiskExtents(ctypes.Structure):
     ]
 
 
+class CreateDiskGPT(ctypes.Structure):
+    """Contains information that the IOCTL_DISK_CREATE_DISK control code uses
+    to initialize GPT partition table (flattened GPT version).
+
+    .. WARNING::
+
+       The ``partition_style`` field MUST be set to :attr:`PARTITION_STYLE.GPT`.
+
+    See:
+
+    * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-create_disk
+    * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-create_disk_gpt
+    """
+
+    _fields_ = [
+        ("partition_style", ctypes.wintypes.DWORD),  # MUST be PARTITION_STYLE.GPT
+        ("guid", ctypes.c_char * 16),
+        ("max_partition_count", ctypes.wintypes.DWORD),
+        # ↑↑ min = 128 for compliance with EFI spec
+    ]
+
+
+class PartitionInformationExGPT(ctypes.Structure):
+    """Contains GPT partition information.
+
+    See:
+
+    * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-partition_information_ex
+    * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-partition_information_gpt
+    """
+
+    _fields_ = [
+        ("partition_style", ctypes.wintypes.DWORD),  # One of PARTITION_STYLE enum
+        ("partition_ordinal", ctypes.wintypes.WORD),
+        ("starting_offset", ctypes.wintypes.LARGE_INTEGER),
+        ("partition_length", ctypes.wintypes.LARGE_INTEGER),
+        ("partition_number", ctypes.wintypes.DWORD),
+        ("rewrite_partition", ctypes.wintypes.BOOLEAN),
+        ("is_service_partition", ctypes.wintypes.BOOLEAN),
+        ("_padding", ctypes.c_char * 2),  # Padding (because struct was flattened)
+        # ↓↓ GPT
+        ("partition_type", ctypes.c_char * 16),
+        ("partition_id", ctypes.c_char * 16),
+        ("attributes", ctypes.c_uint64),  # DWORD64
+        ("name", ctypes.wintypes.WCHAR * 36),
+    ]
+
+
+def drive_layout_information_ex_gpt_factory(
+    partition_count: int = 1, **params
+) -> ctypes.Structure:
+    """Generate a :py:class:`DriveLayoutInformationExGPT` structure which can store the
+    information for ``partition_count`` partitions.
+
+    :param partition_count: The number of partitions (default: 1).
+    :param params: Any member of the :py:class:`DriveLayoutInformationExGPT`
+        struct to initialize values.
+
+    .. py:class:: DriveLayoutInformationExGPT
+
+       Contains extended information about a drive's partitions (flattened GPT variant).
+
+       See:
+
+       * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-drive_layout_information_ex
+       * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-drive_layout_information_gpt
+
+       .. py:attribute:: partition_style
+       .. py:attribute:: partition_count
+       .. py:attribute:: disk_id
+       .. py:attribute:: starting_usable_offset
+       .. py:attribute:: usable_length
+       .. py:attribute:: max_partition_count
+       .. py:attribute:: partition_entry
+    """
+
+    class DriveLayoutInformationExGPT(ctypes.Structure):
+        """Contains extended information about a drive's partitions (GPT variant).
+
+        See:
+
+        * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-drive_layout_information_ex
+        * https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-drive_layout_information_gpt
+        """
+
+        _fields_ = [
+            ("partition_style", ctypes.wintypes.DWORD),
+            ("partition_count", ctypes.wintypes.DWORD),
+            # ↓↓ GPT
+            ("disk_id", ctypes.c_char * 16),
+            ("starting_usable_offset", ctypes.wintypes.LARGE_INTEGER),
+            ("usable_length", ctypes.wintypes.LARGE_INTEGER),
+            ("max_partition_count", ctypes.wintypes.DWORD),
+            # ↑↑ GPT
+            ("partition_entry", PartitionInformationExGPT * partition_count),
+        ]
+
+    return DriveLayoutInformationExGPT(partition_count=partition_count, **params)
+
+
 # =============================================================================
 # Constants
 # =============================================================================
@@ -93,9 +220,57 @@ IOCTL_VOLUME_BASE = 0x00000056
 
 #: IOCTL to obtain the physical location of the specified volume on one or more
 #: disks.
+#:
+#: See: https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-ioctl_volume_get_volume_disk_extents
 IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS = _ctl_code(
     IOCTL_VOLUME_BASE,
     0,
     METHOD.BUFFERED,
     FILE_ACCESS.ANY,
+)
+
+#: See: https://github.com/microsoft/win32metadata/blob/main/generation/WinSDK/RecompiledIdlHeaders/um/winioctl.h#L9013
+IOCTL_DISK_BASE = 0x00000007
+
+#: Initializes the specified disk and disk partition table using the
+#: information in the CREATE_DISK structure.
+#:
+#: See: https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-ioctl_disk_create_disk
+IOCTL_DISK_CREATE_DISK = _ctl_code(
+    IOCTL_DISK_BASE,
+    0x0016,
+    METHOD.BUFFERED,
+    FILE_ACCESS.READ | FILE_ACCESS.WRITE,
+)
+
+#: Invalidates the cached partition table and re-enumerates the device.
+#:
+#: See: https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-ioctl_disk_update_properties
+IOCTL_DISK_UPDATE_PROPERTIES = _ctl_code(
+    IOCTL_DISK_BASE,
+    0x0050,
+    METHOD.BUFFERED,
+    FILE_ACCESS.ANY,
+)
+
+#: Retrieves extended information for each entry in the partition tables for a
+#: disk.
+#:
+#: See: https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-ioctl_disk_get_drive_layout_ex
+IOCTL_DISK_GET_DRIVE_LAYOUT_EX = _ctl_code(
+    IOCTL_DISK_BASE,
+    0x0014,
+    METHOD.BUFFERED,
+    FILE_ACCESS.ANY,
+)
+
+#: Partitions a disk according to the specified drive layout and partition
+#: information data.
+#:
+#: See: https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-ioctl_disk_set_drive_layout_ex
+IOCTL_DISK_SET_DRIVE_LAYOUT_EX = _ctl_code(
+    IOCTL_DISK_BASE,
+    0x0015,
+    METHOD.BUFFERED,
+    FILE_ACCESS.READ | FILE_ACCESS.WRITE,
 )

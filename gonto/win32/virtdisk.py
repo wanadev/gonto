@@ -11,17 +11,17 @@ from enum import IntEnum, Enum, IntFlag
 # =============================================================================
 
 
-class VIRTUAL_STORAGE_TYPE_DEVICE(IntEnum):
+class VIRTUAL_STORAGE_TYPE(IntEnum):
     """Device type identifier.
 
     See: https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ns-virtdisk-virtual_storage_type#members
     """
 
     # fmt: off
-    UNKNOWN = 0
-    ISO     = 1
-    VHD     = 2
-    VHDX    = 3
+    DEVICE_UNKNOWN = 0
+    DEVICE_ISO     = 1
+    DEVICE_VHD     = 2
+    DEVICE_VHDX    = 3
     # fmt: on
 
 
@@ -94,10 +94,10 @@ class ATTACH_VIRTUAL_DISK_FLAG(IntFlag):
     NO_LOCAL_HOST                    = 0x00000008
     NO_SECURITY_DESCRIPTOR           = 0x00000010
     BYPASS_DEFAULT_ENCRYPTION_POLICY = 0x00000020
-    # NON_PNP,
-    # RESTRICTED_RANGE,
-    # SINGLE_PARTITION,
-    # REGISTER_VOLUME,
+    # NON_PNP
+    # RESTRICTED_RANGE
+    # SINGLE_PARTITION
+    # REGISTER_VOLUME
     # AT_BOOT
     # fmt: on
 
@@ -109,6 +109,42 @@ class DETACH_VIRTUAL_DISK_FLAG(IntFlag):
     """
 
     NONE = 0x00000000
+
+
+class CREATE_VIRTUAL_DISK_FLAG(IntFlag):
+    """Contains virtual hard disk (VHD) creation flags.
+
+    See: https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ne-virtdisk-create_virtual_disk_flag
+    """
+
+    # fmt: off
+    NONE                                   = 0x00000000
+    FULL_PHYSICAL_ALLOCATION               = 0x00000001
+    PREVENT_WRITES_TO_SOURCE_DISK          = 0x00000002
+    DO_NOT_COPY_METADATA_FROM_PARENT       = 0x00000004
+    CREATE_BACKING_STORAGE                 = 0x00000008
+    USE_CHANGE_TRACKING_SOURCE_LIMIT       = 0x00000010
+    PRESERVE_PARENT_CHANGE_TRACKING_STATE  = 0x00000020
+    VHD_SET_USE_ORIGINAL_BACKING_STORAGE   = 0x00000040
+    SPARSE_FILE                            = 0x00000080
+    PMEM_COMPATIBLE                        = 0x00000100
+    # SUPPORT_COMPRESSED_VOLUMES
+    # SUPPORT_SPARSE_FILES_ANY_FS
+    # fmt: on
+
+
+class CREATE_VIRTUAL_DISK_VERSION(IntEnum):
+    """Contains the version of the virtual disk CREATE_VIRTUAL_DISK_PARAMETERS
+    structure to use in calls to virtual disk functions.
+
+    See: https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ne-virtdisk-create_virtual_disk_version
+    """
+
+    UNSPECIFIED = 0  # Not supported
+    VERSION_1 = 1
+    VERSION_2 = 2
+    VERSION_3 = 3  # Not documented
+    VERSION_4 = 4  # Not documented
 
 
 # =============================================================================
@@ -125,6 +161,28 @@ class VirtualStorageType(ctypes.Structure):
     _fields_ = [
         ("device_id", ctypes.wintypes.ULONG),
         ("guid", ctypes.c_char * 16),
+    ]
+
+
+class CreateVirtualDiskParametersVersion1(ctypes.Structure):
+    """Contains virtual hard disk (VHD) creation parameters, providing control
+    over, and information about, the newly created virtual disk.
+
+    .. WARNING::
+
+       The ``version`` field MUST be set to :attr:`~CREATE_VIRTUAL_DISK_VERSION.VERSION_1`.
+
+    See: https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/ns-virtdisk-create_virtual_disk_parameters
+    """
+
+    _fields_ = [
+        ("version", ctypes.wintypes.DWORD),  # MUST be set to VERSION_1
+        ("guid", ctypes.c_char * 16),
+        ("maximum_size", ctypes.c_uint64),
+        ("block_size_in_bytes", ctypes.wintypes.ULONG),
+        ("sector_size_in_bytes", ctypes.wintypes.ULONG),
+        ("parent_path", ctypes.wintypes.LPCWSTR),
+        ("source_path", ctypes.wintypes.LPCWSTR),
     ]
 
 
@@ -206,6 +264,33 @@ def _bind_lib():
         ctypes.wintypes.LPWSTR,
     ]
     lib.GetVirtualDiskPhysicalPath.restype = ctypes.wintypes.DWORD
+
+    # https://learn.microsoft.com/en-us/windows/win32/api/virtdisk/nf-virtdisk-createvirtualdisk
+    # DWORD CreateVirtualDisk(
+    #   [in]           PVIRTUAL_STORAGE_TYPE           VirtualStorageType,
+    #   [in]           PCWSTR                          Path,
+    #   [in]           VIRTUAL_DISK_ACCESS_MASK        VirtualDiskAccessMask,
+    #   [in, optional] PSECURITY_DESCRIPTOR            SecurityDescriptor,
+    #   [in]           CREATE_VIRTUAL_DISK_FLAG        Flags,
+    #   [in]           ULONG                           ProviderSpecificFlags,
+    #   [in]           PCREATE_VIRTUAL_DISK_PARAMETERS Parameters,
+    #   [in, optional] LPOVERLAPPED                    Overlapped,
+    #   [out]          PHANDLE                         Handle
+    # );
+    lib.CreateVirtualDisk.argtypes = [
+        ctypes.POINTER(VirtualStorageType),
+        ctypes.wintypes.LPCWSTR,
+        ctypes.wintypes.DWORD,
+        ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
+        #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-security_descriptor
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.ULONG,
+        ctypes.POINTER(CreateVirtualDiskParametersVersion1),  # XXX v2 not bound yet
+        ctypes.c_void_p,  # XXX Improve this definition if we bind the struct
+        #                 # XXX https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-overlapped
+        ctypes.wintypes.PHANDLE,
+    ]
+    lib.CreateVirtualDisk.restype = ctypes.wintypes.DWORD
 
     return lib
 

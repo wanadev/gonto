@@ -27,8 +27,10 @@ drive letter::
 """
 
 import re
+import uuid
 import ctypes
 import ctypes.wintypes
+import time
 from pathlib import Path
 from collections.abc import Iterator
 
@@ -38,15 +40,18 @@ from .win32 import ioapiset
 from .win32 import virtdisk
 from .win32 import winbase
 from .win32 import winioctl
+from .win32 import fmifs
 from .win32.const import ERROR_SUCCESS
 from .win32.const import ERROR_NO_MORE_FILES
 from .win32.const import ACCESS_MASK
 from .win32.const import FILE_SHARE
 
+from .log import logger, DEBUG
+
 _ext_to_device_type = {
-    ".iso": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.ISO,
-    ".vhd": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.VHD,
-    ".vhdx": virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.VHDX,
+    ".iso": virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_ISO,
+    ".vhd": virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_VHD,
+    ".vhdx": virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_VHDX,
 }
 
 
@@ -86,6 +91,12 @@ class VolumeNotInDiskImage(BaseDiskImageError):
     pass
 
 
+class VolumeEnumerationTimeout(BaseDiskImageError):
+    """The volumes cannot be enumerated in time."""
+
+    pass
+
+
 class DiskImage:
     """Manipulates a disk image (vhd, vhdx, iso) on Windows."""
 
@@ -97,7 +108,7 @@ class DiskImage:
     def open(
         self,
         path: Path | str,
-        device_type: virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE | None = None,
+        device_type: virtdisk.VIRTUAL_STORAGE_TYPE | None = None,
         access_mask: virtdisk.VIRTUAL_DISK_ACCESS_MASK = virtdisk.VIRTUAL_DISK_ACCESS_MASK.ALL,
         open_flags: virtdisk.OPEN_VIRTUAL_DISK_FLAG = virtdisk.OPEN_VIRTUAL_DISK_FLAG.NONE,
     ) -> None:
@@ -127,7 +138,7 @@ class DiskImage:
             if ext in _ext_to_device_type:
                 device_type = _ext_to_device_type[ext]
             else:
-                device_type = virtdisk.VIRTUAL_STORAGE_TYPE_DEVICE.UNKNOWN
+                device_type = virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_UNKNOWN
 
         _virtual_storage_type = virtdisk.VirtualStorageType(
             device_id=device_type.value,
@@ -150,6 +161,342 @@ class DiskImage:
             raise ctypes.WinError(ret)  # type: ignore
 
         self._handle = _handle
+        self._image_path = path
+
+    def create(
+        self,
+        path: Path | str,
+        size: int,
+        label: str | None = None,
+        device_type: virtdisk.VIRTUAL_STORAGE_TYPE | None = None,
+    ) -> None:
+        """Create a new disk image containing an NTFS partition.
+
+        :param path: Path to the disk image.
+        :param size: Size of the image disk in GiB.
+        :param label: Label of the partition in the disk image (default:
+            ``None`` (no label)).
+
+            .. NOTE::
+
+               The label name must be 32 char long maximum (it will be
+               truncated if longer).
+
+               Only characters allowed in file names are allowed in the
+               label.
+
+        :param device_type: The type of the disk image (default: ``None``
+            (guessed from file extension), currently only VHD is supported).
+
+        :raise ValueError: If device_type is not
+            :attr:`~gonto.win32.virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_VHD`.
+        :raise DiskImageAlreadyOpened: If a virtual disk has already been opened.
+        :raise VolumeEnumerationTimeout: If volumes are not updated in time
+            after creating the partition.
+        :raise WindowsError|OSError: If a Win32 error occurs.
+        """
+        if self._handle:
+            raise DiskImageAlreadyOpened("Virtual disk already opened!")
+
+        path = Path(path)
+
+        # Guess device_type from file ext
+        # Note: this is to have the same pattern than open() even if we
+        #       currently only support VHD...
+
+        if device_type is None:
+            ext = path.suffix.lower()
+            if ext in _ext_to_device_type:
+                device_type = _ext_to_device_type[ext]
+            else:
+                device_type = virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_UNKNOWN
+
+        if device_type != virtdisk.VIRTUAL_STORAGE_TYPE.DEVICE_VHD:
+            raise ValueError(
+                "Unsupported device type for disk image creation: %s" % device_type.name
+            )
+
+        # Create output disk image
+
+        _path_p = ctypes.c_wchar_p(str(path))
+        _handle = ctypes.wintypes.HANDLE()
+
+        _virtual_storage_type = virtdisk.VirtualStorageType(
+            device_id=device_type.value,
+            guid=virtdisk.VIRTUAL_STORAGE_TYPE_VENDOR.MICROSOFT.value,
+        )
+
+        _create_virtual_disk_parameters = virtdisk.CreateVirtualDiskParametersVersion1(
+            version=virtdisk.CREATE_VIRTUAL_DISK_VERSION.VERSION_1,
+            guid=uuid.uuid4().bytes_le,
+            maximum_size=size * 1024 * 1024 * 1024,  # GiB -> B
+            #                                        # /!\ MUST be a multiple of 512
+            block_size_in_bytes=0,  # 0 because FULL_PHYSICAL_ALLOCATION is set.
+            #                       # Without full alloc, allowed block sizes
+            #                       # are 512 kiB and 2 MiB for VHDs
+            sector_size_in_bytes=512,  # Must be set to 512 (MS doc)
+            parent_path=None,
+            source_path=None,
+        )
+
+        ret = virtdisk.lib.CreateVirtualDisk(
+            ctypes.byref(_virtual_storage_type),
+            _path_p,
+            virtdisk.VIRTUAL_DISK_ACCESS_MASK.ALL,
+            None,
+            virtdisk.CREATE_VIRTUAL_DISK_FLAG.FULL_PHYSICAL_ALLOCATION,
+            0x00,
+            ctypes.byref(_create_virtual_disk_parameters),
+            None,
+            ctypes.byref(_handle),
+        )
+
+        if ret != ERROR_SUCCESS or _handle.value is None:
+            raise ctypes.WinError(ret)  # type: ignore
+
+        self._handle = _handle
+
+        # Initialize disk with GPT partition table
+
+        self.attach(attach_flags=virtdisk.ATTACH_VIRTUAL_DISK_FLAG.NO_DRIVE_LETTER)
+
+        _disk_handle = fileapi.lib.CreateFileW(
+            self.get_physical_path(),
+            ACCESS_MASK.GENERIC_READ | ACCESS_MASK.GENERIC_WRITE,
+            FILE_SHARE.READ | FILE_SHARE.WRITE,
+            None,
+            fileapi.CREATION_DISPOSITION.OPEN_EXISTING,
+            0x00,
+            None,
+        )
+
+        if _disk_handle == handleapi.INVALID_HANDLE_VALUE:
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        _create_disk = winioctl.CreateDiskGPT(
+            partition_style=winioctl.PARTITION_STYLE.GPT,
+            guid=uuid.uuid4().bytes_le,
+            max_partition_count=128,  # For compliance with EFI spec
+        )
+
+        _bytes_returned = ctypes.wintypes.DWORD()  # ...
+
+        success = ioapiset.lib.DeviceIoControl(
+            _disk_handle,
+            winioctl.IOCTL_DISK_CREATE_DISK,
+            ctypes.byref(_create_disk),
+            ctypes.sizeof(_create_disk),
+            None,
+            0,
+            ctypes.byref(_bytes_returned),  # Mandatory even if we will not use it
+            None,
+        )
+
+        if not success:
+            handleapi.lib.CloseHandle(_disk_handle)
+            self.detach()
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        # Update the kernel cached partition table
+
+        success = ioapiset.lib.DeviceIoControl(
+            _disk_handle,
+            winioctl.IOCTL_DISK_UPDATE_PROPERTIES,
+            None,
+            0,
+            None,
+            0,
+            ctypes.byref(_bytes_returned),  # Mandatory even if we will not use it
+            None,
+        )
+
+        if not success:
+            handleapi.lib.CloseHandle(_disk_handle)
+            self.detach()
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        # Get current drive layout
+
+        _drive_layout = winioctl.drive_layout_information_ex_gpt_factory(1)
+
+        success = ioapiset.lib.DeviceIoControl(
+            _disk_handle,
+            winioctl.IOCTL_DISK_GET_DRIVE_LAYOUT_EX,
+            None,
+            0,
+            ctypes.byref(_drive_layout),
+            ctypes.sizeof(_drive_layout),
+            ctypes.byref(_bytes_returned),
+            None,
+        )
+
+        if not success:
+            handleapi.lib.CloseHandle(_disk_handle)
+            self.detach()
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        # Create new partition (full disk size)
+
+        # Align to 1 MiB (required for NTFS formatting)
+        _1MiB = 1024 * 1024
+        partition_start_offset = (
+            (_drive_layout.starting_usable_offset + _1MiB - 1) // _1MiB
+        ) * _1MiB
+        partition_end_offset = (
+            (_drive_layout.starting_usable_offset + _drive_layout.usable_length)
+            // _1MiB
+        ) * _1MiB
+        partition_length = partition_end_offset - partition_start_offset
+
+        _drive_layout.partition_count = 1
+
+        _pe = _drive_layout.partition_entry[0]
+        _pe.partition_style = winioctl.PARTITION_STYLE.GPT
+        _pe.partition_ordinal = 0
+        _pe.starting_offset = partition_start_offset
+        _pe.partition_length = partition_length
+        _pe.partition_number = 1
+        _pe.rewrite_partition = True
+        _pe.is_service_partition = False
+        _pe.partition_type = winioctl.PARTITION_TYPE_GUID.BASIC_DATA.value
+        _pe.partition_id = uuid.uuid4().bytes_le
+        _pe.attributes = 0
+        _pe.name = "Gonto Data Partition"
+
+        success = ioapiset.lib.DeviceIoControl(
+            _disk_handle,
+            winioctl.IOCTL_DISK_SET_DRIVE_LAYOUT_EX,
+            ctypes.byref(_drive_layout),
+            ctypes.sizeof(_drive_layout),
+            None,
+            0,
+            ctypes.byref(_bytes_returned),  # Mandatory even if we will not use it
+            None,
+        )
+
+        if not success:
+            handleapi.lib.CloseHandle(_disk_handle)
+            self.detach()
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        # Update the kernel cached partition table
+
+        success = ioapiset.lib.DeviceIoControl(
+            _disk_handle,
+            winioctl.IOCTL_DISK_UPDATE_PROPERTIES,
+            None,
+            0,
+            None,
+            0,
+            ctypes.byref(_bytes_returned),  # Mandatory even if we will not use it
+            None,
+        )
+
+        if not success:
+            handleapi.lib.CloseHandle(_disk_handle)
+            self.detach()
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+        # Wait for volume to appear
+
+        retries = 10
+        while retries and not list(self.list_volumes()):
+            retries -= 1
+            time.sleep(0.1)
+
+        volumes = list(self.list_volumes())
+
+        if not retries and not volumes:
+            handleapi.lib.CloseHandle(_disk_handle)
+            self.detach()
+            raise VolumeEnumerationTimeout("Volumes not available in time")
+
+        handleapi.lib.CloseHandle(_disk_handle)
+
+        # Format the partition to NTFS with label
+
+        format_success = False
+        format_cb_error = None
+
+        def _format_cb(packet_type, packet_length, packet_data):
+            nonlocal format_success
+            nonlocal format_cb_error
+
+            if DEBUG:
+                try:
+                    packet_type_str = fmifs.FMIFS_PACKET_TYPE(packet_type).name
+                except ValueError:
+                    packet_type_str = str(packet_type)
+                logger.debug(
+                    "DiskImage.create(): FormatEx callback: packet_type=%s, packet_length=%i, packet_data=%s"
+                    % (
+                        packet_type_str,
+                        packet_length,
+                        (
+                            ctypes.cast(packet_data, ctypes.POINTER(ctypes.c_char))[
+                                :packet_length
+                            ].hex(" ")
+                            if packet_length
+                            else "<Empty>"
+                        ),
+                    )
+                )
+
+            if packet_type == fmifs.FMIFS_PACKET_TYPE.FINISHED:
+                if packet_length != ctypes.sizeof(fmifs.FmifsFinishedInformation):
+                    format_cb_error = ValueError(
+                        "Wrong packet data length for FINISHED type. Got %i, expected %i."
+                        % (
+                            packet_length,
+                            ctypes.sizeof(fmifs.FmifsFinishedInformation),
+                        )
+                    )
+                    return False
+                finished_info = fmifs.FmifsFinishedInformation.from_address(packet_data)
+                format_success = bool(finished_info.success)
+            elif packet_type in [
+                fmifs.FMIFS_PACKET_TYPE.INCOMPATIBLE_FILE_SYSTEM,
+                fmifs.FMIFS_PACKET_TYPE.INCOMPATIBLE_MEDIA,
+                fmifs.FMIFS_PACKET_TYPE.ACCESS_DENIED,
+                fmifs.FMIFS_PACKET_TYPE.MEDIA_WRITE_PROTECTED,
+                fmifs.FMIFS_PACKET_TYPE.CANT_LOCK,
+                fmifs.FMIFS_PACKET_TYPE.CANT_QUICK_FORMAT,
+                fmifs.FMIFS_PACKET_TYPE.IO_ERROR,
+                fmifs.FMIFS_PACKET_TYPE.BAD_LABEL,
+            ]:
+                format_cb_error = OSError(
+                    "An error occured when formatting the volume. Error type: %s"
+                    % fmifs.FMIFS_PACKET_TYPE(packet_type).name
+                )
+                return False
+            return True
+
+        _format_cb_winfunct = fmifs.FMIFS_CALLBACK(_format_cb)
+
+        volume_name = volumes[0].rstrip("\\")
+        logger.debug("Formatted volume name: %s" % volume_name)
+
+        fmifs.lib.FormatEx(
+            volume_name,
+            fmifs.FMIFS_MEDIA_FLAG.HARDDISK,
+            "NTFS",
+            (label or "").strip()[:32],
+            True,  # Quick format
+            0,  # ClusterSize (0 = Windows default for NTFS)
+            _format_cb_winfunct,
+        )
+
+        if format_cb_error:
+            self.detach()
+            raise format_cb_error
+
+        if not format_success:
+            self.detach()
+            raise OSError("Partition formatting failed")
+
+        # Cleanup / update class data
+
+        self.detach()
         self._image_path = path
 
     def get_image_path(self) -> Path | None:

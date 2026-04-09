@@ -279,7 +279,7 @@ class Target:
                 diskimage.detach()
             except Exception as error:
                 logger.error(
-                    "An error occured when detaching a disk image: %s" % str(error)
+                    "An error occurred when detaching a disk image: %s" % str(error)
                 )
 
     def has_script(self, script_type: SCRIPT_TYPE) -> bool:

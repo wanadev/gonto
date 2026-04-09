@@ -10,6 +10,7 @@ Python API
    ./target.rst
    ./diskimage.rst
    ./log.rst
+   ./helpers.rst
    ./clihelpers.rst
    ./reghelpers.rst
    ./win32/index.rst
