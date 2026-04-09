@@ -58,7 +58,7 @@ Changelog
 
 * **[NEXT]** (changes on ``master``, but not released yet):
 
-  * Nothing yet ;)
+  * feat: Added "create" command to create VHDs from a folder
 
 * **v0.2.0:**
 
