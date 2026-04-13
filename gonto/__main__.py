@@ -12,7 +12,7 @@ from .target import Target, SCRIPT_TYPE
 from .diskimage import DiskImage
 from .win32.virtdisk import VIRTUAL_STORAGE_TYPE
 from .helpers import ntfs_disk_use
-from .clihelpers import print_title, print_splashscreen
+from .clihelpers import print_title, print_block, print_splashscreen
 from .clihelpers import CSI_FGCOLOR, CSI_STYLE
 from .clihelpers import ProgressBar
 
@@ -136,6 +136,21 @@ def generate_cli() -> argparse.ArgumentParser:
     return parser
 
 
+def _exit_error(message: str = "") -> None:
+    """Exits Gonto with an error.
+
+    :param message: An optional error message.
+    """
+    if message:
+        text = "OPERATION FAILED — %s" % message
+    else:
+        text = "OPERATION FAILED"
+
+    print()
+    print_block(text, fgcolor=CSI_FGCOLOR.RED)
+    sys.exit(1)
+
+
 def _requirement_check_and_download(target: Target) -> bool:
     """Check if requirements are fulfilled and download missing images.
 
@@ -198,7 +213,7 @@ def _requirement_check_and_download(target: Target) -> bool:
             target.download_missing_images(_progress_cb)
         except IOError as error:
             logger.error("An error occurred when downloading images: %s" % str(error))
-            sys.exit(1)
+            _exit_error("Unable to download required images.")
 
     return bool(images)
 
@@ -222,7 +237,7 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
 
     if args.target not in config["targets"]:
         logger.error("Target '%s' does not exist." % args.target)
-        sys.exit(1)
+        _exit_error("Wrong target.")
 
     target = Target(args.target, config)
     script_error = False
@@ -235,10 +250,7 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
             target.run_script(SCRIPT_TYPE.BEFORE_SCRIPT)
         except subprocess.CalledProcessError as error:
             logger.error("Before script terminated with an error: %s" % str(error))
-            script_error = True
-
-    if script_error:
-        sys.exit(1)
+            _exit_error("Before script exited with error.")
 
     # Requirement Check & Download
 
@@ -248,7 +260,11 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
 
     if target_has_image:
         print_title("Disk Image Mount")
-        target.mount_images()
+        try:
+            target.mount_images()
+        except OSError as error:
+            logger.error("Error when mounting disk image: %s" % str(error))
+            _exit_error("Disk image mount failed.")
 
     # Main Script
 
@@ -263,7 +279,12 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
 
     if target_has_image:
         print_title("Disk Image Unmount")
-        target.umount_images()
+        try:
+            target.umount_images()
+        except OSError as error:
+            logger.error("Error when unmounting disk image: %s" % str(error))
+            if not script_error:
+                _exit_error("Disk image unmount failed.")
 
     # After Script
 
@@ -273,10 +294,10 @@ def subcommand_run(config: dict, args: argparse.Namespace) -> None:
             target.run_script(SCRIPT_TYPE.AFTER_SCRIPT)
         except subprocess.CalledProcessError as error:
             logger.error("After script terminated with an error: %s" % str(error))
-            script_error = True
+            _exit_error("After script exited with error.")
 
     if script_error:
-        sys.exit(1)
+        _exit_error("Script exited with error.")
 
 
 def subcommand_list(config: dict, args: argparse.Namespace) -> None:
@@ -297,14 +318,22 @@ def subcommand_mount(config: dict, args: argparse.Namespace) -> None:
     """
     if args.target not in config["targets"]:
         logger.error("Target '%s' does not exist." % args.target)
-        sys.exit(1)
+        _exit_error("Wrong target.")
 
     target = Target(args.target, config)
     target_has_image = _requirement_check_and_download(target)
 
     if target_has_image:
         print_title("Disk Image Mount")
-        target.mount_images(permanent=True)
+        try:
+            target.mount_images(permanent=True)
+        except OSError as error:
+            logger.error("Error when mounting disk image: %s" % str(error))
+            try:
+                target.umount_images()
+            except OSError as error2:
+                logger.error("Error when unmounting disk image: %s" % str(error2))
+            _exit_error("Disk image mount failed.")
     else:
         print("Target has no images...")
 
@@ -326,18 +355,18 @@ def subcommand_create(args: argparse.Namespace) -> None:
             "INPUT_FOLDER does not exist or is not a folder: '%s'"
             % str(input_folder.absolute())
         )
-        sys.exit(1)
+        _exit_error("Precondition failed.")
 
     if output_image.exists():
         logger.error("OUTPUT_IMAGE already exists: '%s'" % str(output_image.absolute()))
-        sys.exit(1)
+        _exit_error("Precondition failed.")
 
     if not output_image.parent.is_dir():
         logger.error(
             "Parent folder for OUTPUT_IMAGE does not exist: '%s'"
             % str(output_image.absolute())
         )
-        sys.exit(1)
+        _exit_error("Precondition failed.")
 
     # Compute output image size (GiB)
 
@@ -381,18 +410,26 @@ def subcommand_create(args: argparse.Namespace) -> None:
     print_title("Disk Image Creation")
 
     disk_image = DiskImage()
-    disk_image.create(
-        output_image,
-        image_size_giga,
-        label=args.label,
-        device_type=VIRTUAL_STORAGE_TYPE.DEVICE_VHD,
-    )
+    try:
+        disk_image.create(
+            output_image,
+            image_size_giga,
+            label=args.label,
+            device_type=VIRTUAL_STORAGE_TYPE.DEVICE_VHD,
+        )
+    except Exception as error:
+        logger.error("An error occurred when creating the disk image: %s" % str(error))
+        _exit_error("Disk image creation failed.")
 
     # Copy files in the disk image
 
     print_title("Copying Files")
 
-    disk_image.attach()
+    try:
+        disk_image.attach()
+    except OSError as error:
+        logger.error("Unable to attach disk image: %s" % str(error))
+        _exit_error("Image provisioning failed.")
 
     mount_point = None
     retries = 10
@@ -403,9 +440,13 @@ def subcommand_create(args: argparse.Namespace) -> None:
 
     if not mount_point:
         logger.error("Unable to mount the created volume in time.")
-        sys.exit(1)
+        try:
+            disk_image.detach()
+        except OSError as error:
+            logger.error("Error when detaching disk image: %s" % str(error))
+        _exit_error("Image provisioning failed.")
 
-    destination_folder = Path(mount_point)
+    destination_folder = Path(mount_point)  # type: ignore
     logger.info("Source path is '%s'" % input_folder)
     logger.info("Destination path is '%s'" % destination_folder)
 
@@ -413,14 +454,28 @@ def subcommand_create(args: argparse.Namespace) -> None:
         print("* Copying '%s' -> '%s'" % (src, dst))
         shutil.copy2(src, dst, **kwargs)
 
-    shutil.copytree(
-        input_folder,
-        destination_folder,
-        copy_function=_copy,
-        dirs_exist_ok=True,
-    )
+    try:
+        shutil.copytree(
+            input_folder,
+            destination_folder,
+            copy_function=_copy,
+            dirs_exist_ok=True,
+        )
+    except Exception as error:
+        logger.error(
+            "An error occurred when copying files to the disk image: %s" % str(error)
+        )
+        try:
+            disk_image.detach()
+        except OSError as error2:
+            logger.error("Error when detaching disk image: %s" % str(error2))
+        _exit_error("Image provisioning failed.")
 
-    disk_image.detach()
+    try:
+        disk_image.detach()
+    except OSError as error:
+        logger.error("Error when detaching disk image: %s" % str(error))
+        _exit_error("Disk image detach failed.")
 
 
 def main(args=sys.argv[1:]):
@@ -435,7 +490,7 @@ def main(args=sys.argv[1:]):
         is_valid, error_message = validate_config(config)
         if not is_valid:
             logger.error("Configuration error: %s" % error_message)
-            sys.exit(1)
+            _exit_error("Invalid configuration.")
 
     if parsed_args.subcommand == "run":
         subcommand_run(config, parsed_args)
@@ -445,6 +500,13 @@ def main(args=sys.argv[1:]):
         subcommand_mount(config, parsed_args)
     elif parsed_args.subcommand == "create":
         subcommand_create(parsed_args)
+
+    if parsed_args.subcommand in ["run", "mount", "create"]:
+        print()
+        print_block(
+            "OPERATION SUCCEEDED — “N’est-ce pas fantastique ?”",
+            fgcolor=CSI_FGCOLOR.GREEN,
+        )
 
 
 if __name__ == "__main__":

@@ -59,8 +59,10 @@ Changelog
 * **[NEXT]** (changes on ``master``, but not released yet):
 
   * feat: Added "create" command to create VHDs from a folder
+    feat: Improved error/success reporting
     feat: Improved titles drawing
   * fix(main): Do not read config for "create" command
+  * fix(mount): Try to detach all disk images if mount fails
 
 * **v0.2.0:**
 

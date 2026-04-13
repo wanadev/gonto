@@ -1,4 +1,5 @@
 import sys
+import textwrap
 from enum import StrEnum
 
 _CSI = "\x1b["
@@ -24,6 +25,20 @@ class CSI_FGCOLOR(StrEnum):
     MAGENTA = f"{_CSI}35m"
     CYAN = f"{_CSI}36m"
     LIGHT_GRAY = f"{_CSI}37m"
+
+
+class CSI_BGCOLOR(StrEnum):
+    """ANSI terminal background color sequences"""
+
+    DEFAULT = f"{_CSI}49m"
+    BLACK = f"{_CSI}40m"
+    RED = f"{_CSI}41m"
+    GREEN = f"{_CSI}42m"
+    YELLOW = f"{_CSI}43m"
+    BLUE = f"{_CSI}44m"
+    MAGENTA = f"{_CSI}45m"
+    CYAN = f"{_CSI}46m"
+    LIGHT_GRAY = f"{_CSI}47m"
 
 
 def print_center(text: str, width: int = 80) -> None:
@@ -81,6 +96,44 @@ def print_title(text: str, width: int = 80) -> None:
     title += CSI_STYLE.RESET.value
 
     print(title)
+
+
+def print_block(
+    text: str,
+    fgcolor: CSI_FGCOLOR | None = None,
+    bgcolor: CSI_BGCOLOR | None = None,
+    width: int = 80,
+) -> None:
+    """Print the given text in a block.
+
+    :param text: The text to print.
+    :param fgcolor: The text color.
+    :param bgcolor: The background color.
+    :param width: The width of terminal.
+    """
+    block = ""
+
+    color_st = ""
+    color_end = ""
+    if fgcolor:
+        color_st += fgcolor
+        color_end = CSI_STYLE.RESET
+    if bgcolor:
+        color_st += bgcolor
+        color_end = CSI_STYLE.RESET
+
+    block += "%s╭" % color_st
+    block += "─" * (width - 2)
+    block += "╮%s\n" % color_end
+
+    for line in textwrap.wrap(text, width=width - 4):
+        block += ("%%s│ %%-%is │%%s\n" % (width - 4)) % (color_st, line, color_end)
+
+    block += "%s╰" % color_st
+    block += "─" * (width - 2)
+    block += "╯%s\n" % color_end
+
+    print(block)
 
 
 class ProgressBar:
