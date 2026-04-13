@@ -15,6 +15,7 @@ author = "Wanadev"
 
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.githubpages",
 ]
 
 templates_path = ["_templates"]
