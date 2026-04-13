@@ -14,7 +14,7 @@ Requirements
 Documentation
 -------------
 
-* https://pages.wanadev.org/tools/gonto/
+* https://wanadev.github.io/gonto/
 
 
 Contributing

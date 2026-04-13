@@ -38,7 +38,10 @@ dev = [
 gonto = "gonto.__main__:main"
 
 [project.urls]
-source = "https://gitlab.wanadev.org/tools/gonto"
+source = "https://github.com/wanadev/gonto"
+documentation = "https://wanadev.github.io/gonto/"
+issues = "https://github.com/wanadev/gonto/issues"
+chat = "https://discord.gg/BmUkEdMuFp"
 
 [tool.black]
 target-version = ["py311"]

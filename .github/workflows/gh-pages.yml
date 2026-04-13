@@ -1,0 +1,35 @@
+name: Build and deploy Github pages
+
+on:
+  push:
+    tags: "v[0-9]+.[0-9]+.[0-9]+"
+    branches:
+      - master
+
+jobs:
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: "Pull the repository"
+        uses: actions/checkout@v6
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: "Install Python dependencies"
+        run: |
+          pip3 install nox
+
+      - name: "Build Sphinx Doc"
+        run: |
+          nox --session gendoc
+
+      - name: "Deploy Github Pages"
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          BRANCH: gh-pages
+          FOLDER: build/html
