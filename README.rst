@@ -1,7 +1,7 @@
 Gonto – Dependency manager for WanadevStudio
 ============================================
 
-.. figure:: ./gonto.png
+.. figure:: ./gonto-logo.256.png
    :alt: Gonto Logo
 
 
