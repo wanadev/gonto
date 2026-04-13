@@ -51,45 +51,6 @@ Example Gonto configuration file:
               # Set registry keys right after the image is mounted.
               # {{mount_point}} place holder will be replaced by the drive letter
               # the volume is mounted on.
-              #
-              # WARNING:
-              #
-              #   Registry keys are never cleaned by Gonto!
-              #
-              # Supported root keys:
-              #
-              #   HKEY_CLASSES_ROOT
-              #   HKEY_CURRENT_CONFIG
-              #   HKEY_CURRENT_USER
-              #   HKEY_DYN_DATA
-              #   HKEY_LOCAL_MACHINE
-              #   HKEY_PERFORMANCE_DATA
-              #   HKEY_USERS
-              #
-              # For a description of root keys, see:
-              #
-              #   https://docs.python.org/3/library/winreg.html#hkey-constants
-              #
-              # Supported value types:
-              #
-              #   Strings:
-              #
-              #     REG_SZ
-              #     REG_EXPAND_SZ
-              #     REG_MULTI_SZ
-              #
-              #   Numbers:
-              #
-              #     REG_DWORD
-              #     REG_DWORD_LITTLE_ENDIAN
-              #     REG_DWORD_BIG_ENDIAN
-              #     REG_QWORD
-              #     REG_QWORD_LITTLE_ENDIAN
-              #
-              # For a description of value types, see:
-              #
-              #   https://docs.python.org/3/library/winreg.html#value-types
-              #
               - root: "HKEY_LOCAL_MACHINE"  # Root key, required.
                 path: "SOFTWARE\\Gonto"     # Path of the subkey (optional, default: "")
                 name: "MyValue"             # Name of the value, required.
@@ -124,3 +85,48 @@ Example Gonto configuration file:
             env:
               UNREAL_PATH: "{{mount_point}}"
         script: ".\\build.bat --target=windows"
+
+
+Registry Keys
+-------------
+
+Gonto can set registry keys when mounting images. ``{{mount_point}}`` place holder will be replaced by the drive letter the volume is mounted on.
+
+
+.. WARNING::
+
+  Registry keys are never cleaned by Gonto!
+
+Supported root keys::
+
+  HKEY_CLASSES_ROOT
+  HKEY_CURRENT_CONFIG
+  HKEY_CURRENT_USER
+  HKEY_DYN_DATA
+  HKEY_LOCAL_MACHINE
+  HKEY_PERFORMANCE_DATA
+  HKEY_USERS
+
+For a description of root keys, see:
+
+* https://docs.python.org/3/library/winreg.html#hkey-constants
+
+Supported value types::
+
+  Strings:
+
+    REG_SZ
+    REG_EXPAND_SZ
+    REG_MULTI_SZ
+
+  Numbers:
+
+    REG_DWORD
+    REG_DWORD_LITTLE_ENDIAN
+    REG_DWORD_BIG_ENDIAN
+    REG_QWORD
+    REG_QWORD_LITTLE_ENDIAN
+
+For a description of value types, see:
+
+* https://docs.python.org/3/library/winreg.html#value-types
