@@ -1,5 +1,0 @@
-Copyright (c) 2026 Wanadev <https://wanadev.fr>, all rights reserved.
-
-This software is the property of Wanadev. You are not allowed to disclose, copy
-or distribute it, in any form or medium, without express written permission of
-Wanadev.
