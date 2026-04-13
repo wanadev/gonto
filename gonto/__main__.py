@@ -429,12 +429,13 @@ def main(args=sys.argv[1:]):
 
     print_splashscreen(version=VERSION)
 
-    config = read_config()
-    logger.debug("Final config: %s" % str(config))
-    is_valid, error_message = validate_config(config)
-    if not is_valid:
-        logger.error("Configuration error: %s" % error_message)
-        sys.exit(1)
+    if parsed_args.subcommand in ["run", "list", "mount"]:
+        config = read_config()
+        logger.debug("Final config: %s" % str(config))
+        is_valid, error_message = validate_config(config)
+        if not is_valid:
+            logger.error("Configuration error: %s" % error_message)
+            sys.exit(1)
 
     if parsed_args.subcommand == "run":
         subcommand_run(config, parsed_args)
