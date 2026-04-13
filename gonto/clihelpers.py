@@ -56,26 +56,27 @@ def print_splashscreen(version: str | None = None) -> None:
     print(CSI_STYLE.RESET)
 
 
-def print_title(text: str) -> None:
+def print_title(text: str, width: int = 80) -> None:
     """Print a "title".
 
     :param text: The title to print.
+    :param width: The width of terminal.
     """
     title = CSI_STYLE.BOLD.value
     title += "\n"
 
     title += CSI_FGCOLOR.BLUE.value
-    title += "=" * 80
+    title += "═" * width
     title += "\n"
 
     title += CSI_FGCOLOR.LIGHT_GRAY.value
-    title += ":: "
+    title += "⠶ "
     title += CSI_FGCOLOR.CYAN.value
     title += text
     title += "\n"
 
     title += CSI_FGCOLOR.BLUE.value
-    title += "=" * 80
+    title += "═" * width
 
     title += CSI_STYLE.RESET.value
 
