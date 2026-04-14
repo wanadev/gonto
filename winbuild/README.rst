@@ -1,7 +1,7 @@
 Build Gonto for Windows
 =======================
 
-This document explain how to compile the Gonto Python code for Windows and
+This document explains how to compile the Gonto Python code for Windows and
 how to generate the release ZIP.
 
 The compiled code is standalone, there is no need to install Python or other
@@ -24,7 +24,7 @@ dependencies:
     ``Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))``
   * NOTE: all ``choco`` commands should be run as administrator
 
-* Python 3.13:
+* Python 3.13 (recommended version):
 
   * 64bit version
   * Must be added to the PATH (there is a checkbox during the installation)
@@ -60,4 +60,4 @@ Build distributable files
 
 * Zip: run ``winbuild\build-zip.bat``
 
-Results goes to the ``dist``  folder.
+The result goes to the ``dist`` folder.

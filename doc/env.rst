@@ -1,4 +1,4 @@
-Environment variables
+Environment Variables
 =====================
 
 Gonto reads environment variables listed on this page.

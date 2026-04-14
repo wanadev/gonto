@@ -3,15 +3,15 @@
 Gonto Configuration
 ===================
 
-Gonto reads its configuration from several folders and merge them to build its final configuration file.
+Gonto reads its configuration from several folders and merges them to build its final configuration file.
 
-Searched folder are (in order, config from later folder can override the earlier ones):
+Searched folders are (in order, config from later folders can override the earlier ones):
 
 * Gonto installation directory (e.g. ``"C:\winbuild\gonto\"``),
 * User's home directory (e.g. ``"C:\Users\Gonto\"``),
 * Current directory (project dir, e.g. ``"C:\Users\Gonto\projects\MyUEProject\"``).
 
-In the above folders, Gonto will search for its configuration file : ``gonto.yaml`` (``gonto.yml``, ``.gonto.yaml`` and ``.gonto.yml`` are also looked for).
+In the above folders, Gonto will search for its configuration file: ``gonto.yaml`` (``gonto.yml``, ``.gonto.yaml`` and ``.gonto.yml`` are also looked for).
 
 Example Gonto configuration file:
 
@@ -69,11 +69,11 @@ Example Gonto configuration file:
               JAVA_HOME: "{{mount_point}}java\\JDK25\\"
         env:
           FOO: "bar"
-        before_script: |           # Optional, before downloading, mounting and script
+        before_script: |           # Optional, before downloading, mounting and main script
           echo before script
         script: |                  # Required
           .\build.bat --target=android
-        after_script: |            # Optional, after script and unmounting
+        after_script: |            # Optional, after main script and unmounting
           echo after script
 
       # Second target, can be run with the following command:

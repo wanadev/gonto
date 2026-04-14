@@ -5,9 +5,10 @@ Gonto is a command line application. You can run it from CMD.exe or Powershell. 
 
     gonto.exe --help
 
-The Gonto command line is composed in different subcommands::
+The Gonto command line is composed of different subcommands. General CLI usage::
 
     gonto.exe <subcommand> [options]
+
 
 Main CLI (no subcommand)
 ------------------------
@@ -52,7 +53,7 @@ Example::
 "run" Subcommand
 ----------------
 
-Download/mount dependencies and runs scripts of the given target. This subcommand requires a configuration file.
+Downloads and mounts dependencies, then runs the scripts of the given target. This subcommand requires a configuration file.
 
 ::
 
@@ -72,7 +73,7 @@ Example::
 "mount" Subcommand
 ------------------
 
-Download and permanently mount dependencies of the given target without running scripts. This subcommand requires a configuration file.
+Downloads and permanently mounts dependencies of the given target without running scripts. This subcommand requires a configuration file.
 
 ::
 
@@ -92,7 +93,7 @@ Example::
 "create" Subcommand
 -------------------
 
-Creates a new disk image provisionned with the content of the input folder.
+Creates a new disk image provisioned with the content of the input folder.
 
 ::
 
