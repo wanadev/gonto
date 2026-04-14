@@ -10,6 +10,7 @@ Gonto documentation
    :maxdepth: 2
    :caption: Contents:
 
+   ./cli.rst
    ./config.rst
    ./repo.rst
    ./env.rst
