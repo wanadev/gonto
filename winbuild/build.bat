@@ -24,4 +24,4 @@ python -m nuitka ^
     winbuild\gonto-win.py
 
 :: Copy additional files...
-copy LICENSE.txt gonto-win.dist\LICENSE.txt
+copy COPYING gonto-win.dist\COPYING.txt
