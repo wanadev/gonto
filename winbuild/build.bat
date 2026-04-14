@@ -25,6 +25,3 @@ python -m nuitka ^
 
 :: Copy additional files...
 copy LICENSE.txt gonto-win.dist\LICENSE.txt
-
-:: Leave the virtualenv
-deactivate
