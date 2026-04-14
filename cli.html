@@ -199,7 +199,7 @@
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Command Line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Gonto Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repo.html">Gonto Repository</a></li>
-<li class="toctree-l1"><a class="reference internal" href="env.html">Environment variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="env.html">Environment Variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="python_api/index.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="python_api/config.html">config</a></li>
@@ -268,7 +268,7 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
-<p>The Gonto command line is composed in different subcommands:</p>
+<p>The Gonto command line is composed of different subcommands. General CLI usage:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="o">&lt;</span><span class="n">subcommand</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -309,7 +309,7 @@
 </section>
 <section id="run-subcommand">
 <h2>“run” Subcommand<a class="headerlink" href="#run-subcommand" title="Link to this heading">¶</a></h2>
-<p>Download/mount dependencies and runs scripts of the given target. This subcommand requires a configuration file.</p>
+<p>Downloads and mounts dependencies, then runs the scripts of the given target. This subcommand requires a configuration file.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">run</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="n">target</span>
 
 <span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>
@@ -326,7 +326,7 @@
 </section>
 <section id="mount-subcommand">
 <h2>“mount” Subcommand<a class="headerlink" href="#mount-subcommand" title="Link to this heading">¶</a></h2>
-<p>Download and permanently mount dependencies of the given target without running scripts. This subcommand requires a configuration file.</p>
+<p>Downloads and permanently mounts dependencies of the given target without running scripts. This subcommand requires a configuration file.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">mount</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="n">target</span>
 
 <span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>
@@ -343,7 +343,7 @@
 </section>
 <section id="create-subcommand">
 <h2>“create” Subcommand<a class="headerlink" href="#create-subcommand" title="Link to this heading">¶</a></h2>
-<p>Creates a new disk image provisionned with the content of the input folder.</p>
+<p>Creates a new disk image provisioned with the content of the input folder.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">create</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">p</span> <span class="n">SPACE</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">l</span> <span class="n">LABEL</span><span class="p">]</span> <span class="n">INPUT_FOLDER</span> <span class="n">OUTPUT_IMAGE</span>
 
 <span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>

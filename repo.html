@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Environment variables" href="env.html"><link rel="prev" title="Gonto Configuration" href="config.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Environment Variables" href="env.html"><link rel="prev" title="Gonto Configuration" href="config.html">
         <link rel="prefetch" href="_static/gonto-logo.256.png" as="image">
 
     <link rel="shortcut icon" href="_static/gonto-logo.256.png"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
@@ -199,7 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Gonto Configuration</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Gonto Repository</a></li>
-<li class="toctree-l1"><a class="reference internal" href="env.html">Environment variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="env.html">Environment Variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="python_api/index.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="python_api/config.html">config</a></li>
@@ -266,9 +266,9 @@
 <h1>Gonto Repository<a class="headerlink" href="#gonto-repository" title="Link to this heading">¶</a></h1>
 <p>Gonto can download disk images from a repository to fulfill requirements of a target.</p>
 <section id="disk-image-provisioning">
-<h2>Disk Image provisioning<a class="headerlink" href="#disk-image-provisioning" title="Link to this heading">¶</a></h2>
-<p>When Gonto runs a task, it will start by checking if required disk images are available in its cache folder (configured in <code class="docutils literal notranslate"><span class="pre">gonto.cache_dir</span></code> key of the <a class="reference internal" href="config.html#gonto-configuration"><span class="std std-ref">Gonto Configuration</span></a>). If the disk image is not in the cache, it will download if from the repository (configured in <code class="docutils literal notranslate"><span class="pre">gonto.repository</span></code> key of the <a class="reference internal" href="config.html#gonto-configuration"><span class="std std-ref">Gonto Configuration</span></a>).</p>
-<p>Once all required images available in the cache, Gonto will mount them on drive letters.</p>
+<h2>Disk Image Provisioning<a class="headerlink" href="#disk-image-provisioning" title="Link to this heading">¶</a></h2>
+<p>When Gonto runs a task, it will start by checking if required disk images are available in its cache folder (configured in <code class="docutils literal notranslate"><span class="pre">gonto.cache_dir</span></code> key of the <a class="reference internal" href="config.html#gonto-configuration"><span class="std std-ref">Gonto Configuration</span></a>). If the disk image is not in the cache, it will download it from the repository (configured in <code class="docutils literal notranslate"><span class="pre">gonto.repository</span></code> key of the <a class="reference internal" href="config.html#gonto-configuration"><span class="std std-ref">Gonto Configuration</span></a>).</p>
+<p>Once all required images are available in the cache, Gonto will mount them on drive letters.</p>
 </section>
 <section id="repository-specifications">
 <h2>Repository Specifications<a class="headerlink" href="#repository-specifications" title="Link to this heading">¶</a></h2>
@@ -283,7 +283,7 @@ lowercase),</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;version&gt;</span></code> is the version of the disk image (<code class="docutils literal notranslate"><span class="pre">[0-9]+(\.[0-9]+)*(-[a-z0-9]+)?</span></code>
 → ex: <code class="docutils literal notranslate"><span class="pre">160</span></code>, <code class="docutils literal notranslate"><span class="pre">1.2.3</span></code>, <code class="docutils literal notranslate"><span class="pre">1.2.3-beta1</span></code>, <code class="docutils literal notranslate"><span class="pre">1.2.3-custom1</span></code>),</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;platform&gt;</span></code> is the target platform of the disk image (<code class="docutils literal notranslate"><span class="pre">win32</span></code>, <code class="docutils literal notranslate"><span class="pre">win64</span></code> or <code class="docutils literal notranslate"><span class="pre">multi</span></code>),</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&lt;format&gt;</span></code>: is the format of the disk image (<code class="docutils literal notranslate"><span class="pre">vhd</span></code> or <code class="docutils literal notranslate"><span class="pre">vhdx</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;format&gt;</span></code> is the format of the disk image (<code class="docutils literal notranslate"><span class="pre">vhd</span></code> or <code class="docutils literal notranslate"><span class="pre">vhdx</span></code>).</p></li>
 </ul>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">example</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">gonto</span><span class="o">-</span><span class="n">repo</span><span class="o">/</span><span class="n">unreal</span><span class="o">/</span><span class="n">unreal_v5</span><span class="mf">.4.1</span><span class="o">-</span><span class="n">custom1_win64</span><span class="o">.</span><span class="n">vhd</span>
@@ -302,7 +302,7 @@ lowercase),</p></li>
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Environment variables</div>
+                <div class="title">Environment Variables</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -348,7 +348,7 @@ lowercase),</p></li>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Gonto Repository</a><ul>
-<li><a class="reference internal" href="#disk-image-provisioning">Disk Image provisioning</a></li>
+<li><a class="reference internal" href="#disk-image-provisioning">Disk Image Provisioning</a></li>
 <li><a class="reference internal" href="#repository-specifications">Repository Specifications</a></li>
 </ul>
 </li>

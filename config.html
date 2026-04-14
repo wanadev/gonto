@@ -199,7 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Gonto Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repo.html">Gonto Repository</a></li>
-<li class="toctree-l1"><a class="reference internal" href="env.html">Environment variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="env.html">Environment Variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="python_api/index.html">Python API</a><input aria-label="Toggle navigation of Python API" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="python_api/config.html">config</a></li>
@@ -264,14 +264,14 @@
         <article role="main" id="furo-main-content">
           <section id="gonto-configuration">
 <span id="id1"></span><h1>Gonto Configuration<a class="headerlink" href="#gonto-configuration" title="Link to this heading">¶</a></h1>
-<p>Gonto reads its configuration from several folders and merge them to build its final configuration file.</p>
-<p>Searched folder are (in order, config from later folder can override the earlier ones):</p>
+<p>Gonto reads its configuration from several folders and merges them to build its final configuration file.</p>
+<p>Searched folders are (in order, config from later folders can override the earlier ones):</p>
 <ul class="simple">
 <li><p>Gonto installation directory (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;C:\winbuild\gonto\&quot;</span></code>),</p></li>
 <li><p>User’s home directory (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;C:\Users\Gonto\&quot;</span></code>),</p></li>
 <li><p>Current directory (project dir, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;C:\Users\Gonto\projects\MyUEProject\&quot;</span></code>).</p></li>
 </ul>
-<p>In the above folders, Gonto will search for its configuration file : <code class="docutils literal notranslate"><span class="pre">gonto.yaml</span></code> (<code class="docutils literal notranslate"><span class="pre">gonto.yml</span></code>, <code class="docutils literal notranslate"><span class="pre">.gonto.yaml</span></code> and <code class="docutils literal notranslate"><span class="pre">.gonto.yml</span></code> are also looked for).</p>
+<p>In the above folders, Gonto will search for its configuration file: <code class="docutils literal notranslate"><span class="pre">gonto.yaml</span></code> (<code class="docutils literal notranslate"><span class="pre">gonto.yml</span></code>, <code class="docutils literal notranslate"><span class="pre">.gonto.yaml</span></code> and <code class="docutils literal notranslate"><span class="pre">.gonto.yml</span></code> are also looked for).</p>
 <p>Example Gonto configuration file:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gonto&#39;s configuration.</span>
 <span class="c1">#</span>
@@ -325,11 +325,11 @@
 <span class="w">          </span><span class="nt">JAVA_HOME</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{mount_point}}java\\JDK25\\&quot;</span>
 <span class="w">    </span><span class="nt">env</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">FOO</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bar&quot;</span>
-<span class="w">    </span><span class="nt">before_script</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w">           </span><span class="c1"># Optional, before downloading, mounting and script</span>
+<span class="w">    </span><span class="nt">before_script</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w">           </span><span class="c1"># Optional, before downloading, mounting and main script</span>
 <span class="w">      </span><span class="no">echo before script</span>
 <span class="w">    </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w">                  </span><span class="c1"># Required</span>
 <span class="w">      </span><span class="no">.\build.bat --target=android</span>
-<span class="w">    </span><span class="nt">after_script</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w">            </span><span class="c1"># Optional, after script and unmounting</span>
+<span class="w">    </span><span class="nt">after_script</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w">            </span><span class="c1"># Optional, after main script and unmounting</span>
 <span class="w">      </span><span class="no">echo after script</span>
 
 <span class="w">  </span><span class="c1"># Second target, can be run with the following command:</span>

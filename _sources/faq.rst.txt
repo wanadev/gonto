@@ -4,7 +4,7 @@ Frequently Asked Questions
 How to fix encoding error?
 --------------------------
 
-On Windows the console encoding may not be specified when running as service accounts (e.g. GitLab CI). This can lead to unicode encoding errors exceptions::
+On Windows the console encoding may not be specified when running as service accounts (e.g. GitLab CI). This can lead to unicode encoding errors::
 
     UnicodeEncodeError: 'charmap' codec can't encode characters in position 18-24: character maps to <undefined>
 
