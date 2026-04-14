@@ -8,7 +8,6 @@ This file is a memo for the maintainer.
 ---------
 
 * Check copyright years in ``doc/conf.py``
-* Check copyright years in ``LICENSE.txt``
 
 
 1. Release
@@ -20,14 +19,20 @@ This file is a memo for the maintainer.
 * Commit / tag (``git commit -m vX.Y.Z && git tag vX.Y.Z && git push && git push --tags``)
 
 
-2. Build Windows standalone version
+2. Publish package on PyPI
+--------------------------
+
+Automated, nothing to do.
+
+
+3. Build Windows standalone version
 -----------------------------------
 
-* Follow instructions of ./winbuild/README.rst
+Automated (built on CI), just download the artifact once finished.
 
 
-3. Misc
--------
+4. Publish release
+------------------
 
-* Update Gonto on ``winbuild2``
-* Update Gonto on ``winbuild3``
+* Make a release on GitHub
+* Add standalone zip
