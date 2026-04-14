@@ -1,6 +1,8 @@
 Gonto – Dependency manager for WanadevStudio
 ============================================
 
+|Github| |Discord| |PYPI Version| |Build Status| |Black| |License|
+
 Gonto is a tool we developed to handle our multiple Unreal Engine versions on our CI and our developers' PCs. It can automatically download our UE versions (and some other dependencies like Android SDK with its associated JDK) from our centralised repository, prepare the environment and run our build scripts.
 
 Gonto handles dependencies as disk images, mounts them on Windows drive letters (for example ``U:``) and adapts the environment and registry to point to the right places. Using disk images allows us to directly use the dependencies without having to extract them.
@@ -164,3 +166,15 @@ Changelog
     * Mount/Unmount VHDs
     * before_script/script/after_script
     * Handle environment variable with dynamic replacement of the mount point
+
+
+.. |Github| image:: https://img.shields.io/github/stars/wanadev/gonto?label=Github&logo=github
+   :target: https://github.com/wanadev/gonto
+.. |Discord| image:: https://img.shields.io/badge/chat-Discord-8c9eff?logo=discord&logoColor=ffffff
+   :target: https://discord.gg/BmUkEdMuFp
+.. |PYPI Version| image:: https://img.shields.io/pypi/v/gonto.svg
+   :target: https://pypi.python.org/pypi/gonto
+.. |Build Status| image:: https://github.com/wanadev/gonto/actions/workflows/python-ci.yml/badge.svg
+   :target: https://github.com/wanadev/gonto/actions
+.. |Black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://black.readthedocs.io/en/stable/
