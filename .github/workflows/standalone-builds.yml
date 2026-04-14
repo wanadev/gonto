@@ -1,0 +1,36 @@
+name: "Standalone Builds"
+
+on: [push, pull_request]
+
+jobs:
+
+  windows:
+    name: "Windows Standalone Build"
+    runs-on: windows-2022
+
+    steps:
+      - name: "Checkout the repository"
+        uses: actions/checkout@v6
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"  # NOTE: 3.14 not compatible yet
+
+      - name: "Build"
+        run: |
+          .\winbuild\build.bat
+
+      - name: "Check the build is working"
+        run: |
+          .\gonto-win.dist\gonto.exe --version
+
+      - name: "Make the release Zip"
+        run: |
+          .\winbuild\build-zip.bat
+
+      - name: "Upload Windows Zip"
+        uses: actions/upload-artifact@v7
+        with:
+          name: standalone_windows_x86_64
+          path: "dist/*.zip"
