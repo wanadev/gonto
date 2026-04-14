@@ -178,3 +178,5 @@ Changelog
    :target: https://github.com/wanadev/gonto/actions
 .. |Black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://black.readthedocs.io/en/stable/
+.. |License| image:: https://img.shields.io/pypi/l/gonto.svg
+   :target: https://github.com/wanadev/gonto/blob/master/COPYING
