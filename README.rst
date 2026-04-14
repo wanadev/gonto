@@ -19,7 +19,9 @@ Features:
 .. figure:: ./gonto-logo.256.png
    :alt: Gonto Logo
 
-Requirements:
+
+Requirements
+------------
 
 * Windows 10 or Windows 11
 * Python >= 3.11 (for the source code version, standalone builds do not require any Python installation)
