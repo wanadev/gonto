@@ -139,6 +139,10 @@ Changelog
 
 * **[NEXT]** (changes on ``master``, but not released yet):
 
+  * Nothing yet ;)
+
+* **v0.3.0:**
+
   * feat: Added "create" command to create VHDs from a folder
   * feat: Improved error/success reporting
   * feat: Improved titles drawing
