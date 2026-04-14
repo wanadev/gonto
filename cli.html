@@ -3,11 +3,11 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="prev" title="winioctl" href="python_api/win32/winioctl.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Gonto Configuration" href="config.html"><link rel="prev" title="Gonto documentation" href="index.html">
         <link rel="prefetch" href="_static/gonto-logo.256.png" as="image">
 
     <link rel="shortcut icon" href="_static/gonto-logo.256.png"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Build Gonto for Windows - Gonto documentation</title>
+        <title>Command Line - Gonto documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -196,7 +196,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Command Line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Gonto Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repo.html">Gonto Repository</a></li>
 <li class="toctree-l1"><a class="reference internal" href="env.html">Environment variables</a></li>
@@ -223,7 +223,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Build Gonto for Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="winbuild.html">Build Gonto for Windows</a></li>
 </ul>
 
 </div>
@@ -244,7 +244,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/winbuild.rst.txt" title="View this page">
+  <a class="muted-link" href="_sources/cli.rst.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -262,67 +262,114 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="build-gonto-for-windows">
-<h1>Build Gonto for Windows<a class="headerlink" href="#build-gonto-for-windows" title="Link to this heading">¶</a></h1>
-<p>This document explain how to compile the Gonto Python code for Windows and
-how to generate the release ZIP.</p>
-<p>The compiled code is standalone, there is no need to install Python or other
-dependency on the target system.</p>
-<section id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">¶</a></h2>
-<p>To build Gonto for Windows, you must first install the following
-dependencies:</p>
-<ul class="simple">
-<li><p>Windows 11:</p>
-<ul>
-<li><p>Download (VM): <a class="reference external" href="https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/">https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/</a></p></li>
-</ul>
-</li>
-<li><p>Install Chocolatey (optional, but simpler setup):</p>
-<ul>
-<li><p>Run in PowerShell as administrator:
-<code class="docutils literal notranslate"><span class="pre">Set-ExecutionPolicy</span> <span class="pre">Bypass</span> <span class="pre">-Scope</span> <span class="pre">Process</span> <span class="pre">-Force;</span> <span class="pre">iex</span> <span class="pre">((New-Object</span> <span class="pre">System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))</span></code></p></li>
-<li><p>NOTE: all <code class="docutils literal notranslate"><span class="pre">choco</span></code> commands should be run as administrator</p></li>
-</ul>
-</li>
-<li><p>Python 3.13:</p>
-<ul>
-<li><p>64bit version</p></li>
-<li><p>Must be added to the PATH (there is a checkbox during the installation)</p></li>
-<li><p>Download: <a class="reference external" href="https://www.python.org/">https://www.python.org/</a></p></li>
-<li><p>Choco: <code class="docutils literal notranslate"><span class="pre">choco</span> <span class="pre">install</span> <span class="pre">python313</span></code></p></li>
-</ul>
-</li>
-<li><p>Git:</p>
-<ul>
-<li><p>Download: <a class="reference external" href="https://git-scm.com/">https://git-scm.com/</a></p></li>
-<li><p>Choco: <code class="docutils literal notranslate"><span class="pre">choco</span> <span class="pre">install</span> <span class="pre">git</span></code></p></li>
-</ul>
-</li>
-<li><p>Visual Studio 17 (2022)</p>
-<ul>
-<li><p>Already installed in the Windows 11 Dev VM, else use Chocolatey</p></li>
-<li><p>Choco: <code class="docutils literal notranslate"><span class="pre">choco</span> <span class="pre">install</span> <span class="pre">visualstudio2022-workload-vctools</span></code></p></li>
-</ul>
-</li>
-</ul>
-<p>Restart to finish setup.</p>
-</section>
-<section id="compile-gonto">
-<h2>Compile Gonto<a class="headerlink" href="#compile-gonto" title="Link to this heading">¶</a></h2>
-<p>Run the following command from the project’s root directory (the one that
-contains the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">winbuild</span>\<span class="n">build</span><span class="o">.</span><span class="n">bat</span>
+          <section id="command-line">
+<h1>Command Line<a class="headerlink" href="#command-line" title="Link to this heading">¶</a></h1>
+<p>Gonto is a command line application. You can run it from CMD.exe or Powershell. To get help:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
-<p>The result goes to <code class="docutils literal notranslate"><span class="pre">gonto-win.dist</span></code> folder.</p>
+<p>The Gonto command line is composed in different subcommands:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="o">&lt;</span><span class="n">subcommand</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span>
+</pre></div>
+</div>
+<section id="main-cli-no-subcommand">
+<h2>Main CLI (no subcommand)<a class="headerlink" href="#main-cli-no-subcommand" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">v</span><span class="p">]</span> <span class="p">{</span><span class="nb">list</span><span class="p">,</span><span class="n">run</span><span class="p">,</span><span class="n">mount</span><span class="p">,</span><span class="n">create</span><span class="p">}</span> <span class="o">...</span>
+
+<span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="p">{</span><span class="nb">list</span><span class="p">,</span><span class="n">run</span><span class="p">,</span><span class="n">mount</span><span class="p">,</span><span class="n">create</span><span class="p">}</span>
+    <span class="nb">list</span>                <span class="n">lists</span> <span class="n">available</span> <span class="n">targets</span>
+    <span class="n">run</span>                 <span class="n">runs</span> <span class="n">the</span> <span class="n">requested</span> <span class="n">target</span>
+    <span class="n">mount</span>               <span class="n">mount</span> <span class="n">disk</span> <span class="n">images</span> <span class="n">of</span> <span class="n">the</span> <span class="n">given</span> <span class="n">target</span> <span class="p">(</span><span class="n">without</span> <span class="n">running</span> <span class="n">scripts</span><span class="p">)</span>
+    <span class="n">create</span>              <span class="n">create</span> <span class="n">a</span> <span class="n">new</span> <span class="n">disk</span> <span class="n">image</span> <span class="k">with</span> <span class="n">given</span> <span class="n">content</span>
+
+<span class="n">options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>            <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">v</span><span class="p">,</span> <span class="o">--</span><span class="n">version</span>         <span class="n">show</span> <span class="n">program</span><span class="s1">&#39;s version number and exit</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="o">--</span><span class="n">version</span>
+</pre></div>
+</div>
 </section>
-<section id="build-distributable-files">
-<h2>Build distributable files<a class="headerlink" href="#build-distributable-files" title="Link to this heading">¶</a></h2>
-<ul class="simple">
-<li><p>Zip: run <code class="docutils literal notranslate"><span class="pre">winbuild\build-zip.bat</span></code></p></li>
-</ul>
-<p>Results goes to the <code class="docutils literal notranslate"><span class="pre">dist</span></code>  folder.</p>
+<section id="list-subcommand">
+<h2>“list” Subcommand<a class="headerlink" href="#list-subcommand" title="Link to this heading">¶</a></h2>
+<p>Lists available targets. This subcommand requires a configuration file.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="nb">list</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span>
+
+<span class="n">options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>  <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="nb">list</span>
+</pre></div>
+</div>
+</section>
+<section id="run-subcommand">
+<h2>“run” Subcommand<a class="headerlink" href="#run-subcommand" title="Link to this heading">¶</a></h2>
+<p>Download/mount dependencies and runs scripts of the given target. This subcommand requires a configuration file.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">run</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="n">target</span>
+
+<span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="n">target</span>      <span class="n">the</span> <span class="n">target</span> <span class="n">to</span> <span class="n">run</span>
+
+<span class="n">options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>  <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">run</span> <span class="n">windows</span><span class="o">-</span><span class="n">build</span>
+</pre></div>
+</div>
+</section>
+<section id="mount-subcommand">
+<h2>“mount” Subcommand<a class="headerlink" href="#mount-subcommand" title="Link to this heading">¶</a></h2>
+<p>Download and permanently mount dependencies of the given target without running scripts. This subcommand requires a configuration file.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">mount</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="n">target</span>
+
+<span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="n">target</span>      <span class="n">the</span> <span class="n">target</span> <span class="n">whose</span> <span class="n">images</span> <span class="n">will</span> <span class="n">be</span> <span class="n">mounted</span>
+
+<span class="n">options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>  <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">mount</span> <span class="n">windows</span><span class="o">-</span><span class="n">build</span>
+</pre></div>
+</div>
+</section>
+<section id="create-subcommand">
+<h2>“create” Subcommand<a class="headerlink" href="#create-subcommand" title="Link to this heading">¶</a></h2>
+<p>Creates a new disk image provisionned with the content of the input folder.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">create</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">p</span> <span class="n">SPACE</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">l</span> <span class="n">LABEL</span><span class="p">]</span> <span class="n">INPUT_FOLDER</span> <span class="n">OUTPUT_IMAGE</span>
+
+<span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="n">INPUT_FOLDER</span>          <span class="n">path</span> <span class="n">of</span> <span class="n">the</span> <span class="n">folder</span> <span class="n">that</span> <span class="n">contains</span> <span class="n">files</span> <span class="n">to</span> <span class="n">copy</span> <span class="n">into</span> <span class="n">the</span> <span class="n">disk</span> <span class="n">image</span>
+  <span class="n">OUTPUT_IMAGE</span>          <span class="n">path</span> <span class="n">of</span> <span class="n">the</span> <span class="n">output</span> <span class="n">image</span> <span class="n">file</span>
+
+<span class="n">options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>            <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">p</span> <span class="n">SPACE</span><span class="p">,</span> <span class="o">--</span><span class="n">overprovisioning</span> <span class="n">SPACE</span>
+                        <span class="n">additional</span> <span class="n">disk</span> <span class="n">space</span> <span class="n">to</span> <span class="n">provision</span> <span class="p">(</span><span class="ow">in</span> <span class="n">GiB</span><span class="p">)</span>
+  <span class="o">-</span><span class="n">l</span> <span class="n">LABEL</span><span class="p">,</span> <span class="o">--</span><span class="n">label</span> <span class="n">LABEL</span>
+                        <span class="n">label</span> <span class="n">of</span> <span class="n">the</span> <span class="n">disk</span> <span class="n">image</span> <span class="p">(</span><span class="n">default</span><span class="p">:</span> <span class="s1">&#39;Gonto image&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Simple example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">create</span> <span class="n">input_folder</span>\ <span class="n">output_image</span><span class="o">.</span><span class="n">vhd</span>
+</pre></div>
+</div>
+<p>With a custom volume label:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">create</span> <span class="o">--</span><span class="n">label</span> <span class="s2">&quot;My Label&quot;</span> <span class="n">input_folder</span>\ <span class="n">output_image</span><span class="o">.</span><span class="n">vhd</span>
+</pre></div>
+</div>
+<p>With 4 GiB of additional space in the disk image:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gonto</span><span class="o">.</span><span class="n">exe</span> <span class="n">create</span> <span class="o">--</span><span class="n">overprovisioning</span> <span class="mi">4</span> <span class="n">input_folder</span>\ <span class="n">output_image</span><span class="o">.</span><span class="n">vhd</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -331,15 +378,23 @@ contains the <code class="docutils literal notranslate"><span class="pre">pyproj
       <footer>
         
         <div class="related-pages">
-          
-          <a class="prev-page" href="python_api/win32/winioctl.html">
+          <a class="next-page" href="config.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Gonto Configuration</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="index.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">winioctl</div>
+                <div class="title">Home</div>
                 
               </div>
             </a>
@@ -373,10 +428,12 @@ contains the <code class="docutils literal notranslate"><span class="pre">pyproj
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Build Gonto for Windows</a><ul>
-<li><a class="reference internal" href="#requirements">Requirements</a></li>
-<li><a class="reference internal" href="#compile-gonto">Compile Gonto</a></li>
-<li><a class="reference internal" href="#build-distributable-files">Build distributable files</a></li>
+<li><a class="reference internal" href="#">Command Line</a><ul>
+<li><a class="reference internal" href="#main-cli-no-subcommand">Main CLI (no subcommand)</a></li>
+<li><a class="reference internal" href="#list-subcommand">“list” Subcommand</a></li>
+<li><a class="reference internal" href="#run-subcommand">“run” Subcommand</a></li>
+<li><a class="reference internal" href="#mount-subcommand">“mount” Subcommand</a></li>
+<li><a class="reference internal" href="#create-subcommand">“create” Subcommand</a></li>
 </ul>
 </li>
 </ul>

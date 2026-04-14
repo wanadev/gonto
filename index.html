@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Gonto Configuration" href="config.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Command Line" href="cli.html">
         <link rel="prefetch" href="_static/gonto-logo.256.png" as="image">
 
     <link rel="shortcut icon" href="_static/gonto-logo.256.png"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
@@ -196,6 +196,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Gonto Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repo.html">Gonto Repository</a></li>
 <li class="toctree-l1"><a class="reference internal" href="env.html">Environment variables</a></li>
@@ -263,9 +264,29 @@
         <article role="main" id="furo-main-content">
           <section id="gonto-documentation">
 <h1>Gonto documentation<a class="headerlink" href="#gonto-documentation" title="Link to this heading">¶</a></h1>
+<p>Gonto is a tool we developed to handle our multiple Unreal Engine versions on our CI and our developers’ PCs. It can automatically download our UE versions (and some other dependencies like Android SDK with its associated JDK) from our centralised repository, prepare the environment and run our build scripts.</p>
+<p>Gonto handles dependencies as disk images, mounts them on Windows drive letters (for example <code class="docutils literal notranslate"><span class="pre">U:</span></code>) and adapts the environment and registry to point to the right places. Using disk images allows us to directly use the dependencies without having to extract them.</p>
+<p>When you have a Zip, you need twice the disk space (for the Zip itself and the extracted files), and it can take hours to extract (a complete Unreal Engine build contains more than 200 000 files and requires more than 140 GiB of disk space).</p>
+<p>Features:</p>
+<ul class="simple">
+<li><p>Dependency management (download and cache on disk).</p></li>
+<li><p>Centralised repository (any HTTP server with a specific file organization).</p></li>
+<li><p>Targets, like a <em>Makefile</em> (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;build-windows&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;build-android&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;build-meta&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;build-playstation&quot;</span></code>,…).</p></li>
+<li><p>Complete pipeline execution with the <code class="docutils literal notranslate"><span class="pre">&quot;gonto</span> <span class="pre">run</span> <span class="pre">&lt;TARGET&gt;&quot;</span></code> command (download images missing from the cache, mount all dependencies and update environment, run build script, cleanup).</p></li>
+<li><p>A way to permanently mount the dependencies of a specific target without running the scripts (for developers’ PCs): <code class="docutils literal notranslate"><span class="pre">&quot;gonto</span> <span class="pre">mount</span> <span class="pre">&lt;TARGET&gt;&quot;</span></code>.</p></li>
+<li><p>A command to create a disk image from a source folder: <code class="docutils literal notranslate"><span class="pre">&quot;gonto</span> <span class="pre">create</span> <span class="pre">&lt;SOURCE_FOLDER&gt;</span> <span class="pre">&lt;DEST_IMAGE&gt;.vhd&quot;</span></code>.</p></li>
+</ul>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#main-cli-no-subcommand">Main CLI (no subcommand)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#list-subcommand">“list” Subcommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#run-subcommand">“run” Subcommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#mount-subcommand">“mount” Subcommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#create-subcommand">“create” Subcommand</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Gonto Configuration</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="config.html#registry-keys">Registry Keys</a></li>
 </ul>
@@ -311,12 +332,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="config.html">
+          <a class="next-page" href="cli.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Gonto Configuration</div>
+                <div class="title">Command Line</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
