@@ -27,3 +27,5 @@ exclude_patterns = []
 
 html_theme = "furo"
 html_static_path = ["_static"]
+html_logo = "./_static/gonto-logo.256.png"
+html_favicon = "./_static/gonto-logo.256.png"

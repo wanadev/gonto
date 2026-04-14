@@ -16,7 +16,7 @@ Features:
 * A way to permanently mount the dependencies of a specific target without running the script (for developers' PCs): ``"gonto mount <TARGET>"``.
 * A command to create a disk image from a source folder: ``"gonto create <SOURCE_FOLDER> <DEST_IMAGE>.vhd"``.
 
-.. figure:: ./gonto-logo.256.png
+.. figure:: ./doc/_static/gonto-logo.256.png
    :alt: Gonto Logo
 
 
