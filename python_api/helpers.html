@@ -296,33 +296,8 @@ system.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>folder</strong> – The input folder.</p></li>
-<li><p><strong>cluster_size</strong> – <p>The size of a cluster (minimal disk space that can be
-allocated to hold a file) on the file system (default: 4096 (worst case)).</p>
-<p>Typical values are:</p>
-<div class="table-wrapper docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>Volume Size</p></th>
-<th class="head"><p>Cluster Size</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>7 M - 512 MB</p></td>
-<td><p>512 B</p></td>
-</tr>
-<tr class="row-odd"><td><p>513 MB - 1024 MB</p></td>
-<td><p>1 kB</p></td>
-</tr>
-<tr class="row-even"><td><p>1025 MB - 2GB</p></td>
-<td><p>2 kB</p></td>
-</tr>
-<tr class="row-odd"><td><p>2 GB - 2 TB</p></td>
-<td><p>4 kB</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</p></li>
+<li><p><strong>cluster_size</strong> – The size of a cluster (minimal disk space that can be
+allocated to hold a file) on the file system (default: 4096).</p></li>
 <li><p><strong>mft_record_size</strong> – The size of a record in the master file table
 (generaly 1024 B so it is our default).</p></li>
 </ul>
@@ -330,10 +305,10 @@ allocated to hold a file) on the file system (default: 4096 (worst case)).</p>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><p>A tuple of 4 integers containing:</p>
 <ul class="simple">
-<li><p>estimated file and folder size on an NTFS file system</p></li>
-<li><p>raw size of the files</p></li>
-<li><p>folder count</p></li>
-<li><p>file count</p></li>
+<li><p>The estimated file and folder size on an NTFS file system</p></li>
+<li><p>The raw size of the files</p></li>
+<li><p>The folder count</p></li>
+<li><p>The file count</p></li>
 </ul>
 </p>
 </dd>
