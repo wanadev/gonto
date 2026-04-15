@@ -36,31 +36,16 @@ def ntfs_disk_use(
 
     :param folder: The input folder.
     :param cluster_size: The size of a cluster (minimal disk space that can be
-        allocated to hold a file) on the file system (default: 4096 (worst case)).
-
-        Typical values are:
-
-        +------------------+--------------+
-        | Volume Size      | Cluster Size |
-        +==================+==============+
-        | 7 M - 512 MB     | 512 B        |
-        +------------------+--------------+
-        | 513 MB - 1024 MB | 1 kB         |
-        +------------------+--------------+
-        | 1025 MB - 2GB    | 2 kB         |
-        +------------------+--------------+
-        | 2 GB - 2 TB      | 4 kB         |
-        +------------------+--------------+
-
+        allocated to hold a file) on the file system (default: 4096).
     :param mft_record_size: The size of a record in the master file table
         (generaly 1024 B so it is our default).
 
     :returns: A tuple of 4 integers containing:
 
-        * estimated file and folder size on an NTFS file system
-        * raw size of the files
-        * folder count
-        * file count
+        * The estimated file and folder size on an NTFS file system
+        * The raw size of the files
+        * The folder count
+        * The file count
 
     See: https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc781134(v=ws.10)
     """
