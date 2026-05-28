@@ -139,7 +139,7 @@ Changelog
 
 * **[NEXT]** (changes on ``master``, but not released yet):
 
-  * Nothing yet ;)
+  * misc(nuitka): Updated Nuitka to be able to keep output attached to current terminal after privilege elevation (UAC)
 
 * **v0.3.0:**
 

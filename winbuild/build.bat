@@ -17,7 +17,7 @@ python -m nuitka ^
     --follow-imports ^
     --python-flag=isolated,unbuffered ^
     --assume-yes-for-downloads ^
-    --windows-console-mode=force ^
+    --windows-console-mode=attach ^
     --windows-uac-admin ^
     --windows-icon-from-ico=winbuild\gonto.ico ^
     --output-filename=gonto.exe ^
