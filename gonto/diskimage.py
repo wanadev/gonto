@@ -898,7 +898,18 @@ class DiskImage:
         if not _volume_path_names_buffer_p.value:
             return None  # Not mounted
 
-        return _volume_path_names_buffer_p.value
+        # A volume may have multiple mount point even if we asked only one
+        # (mounting in an empty folder creates at least two other mount points
+        # in $Recycle.Bin). So we try to get the mount point we requested or at
+        # least one not in the trash...
+        volume_mount_points = str(
+            _volume_path_names_buffer_p[0 : _return_length.value - 2]
+        ).split("\x00")
+        for volume_mount_point in volume_mount_points[::-1]:
+            if "\\$Recycle.Bin\\" not in volume_mount_point:
+                return volume_mount_point
+
+        return volume_mount_points[0]
 
     def __del__(self) -> None:
         if not self._handle:
