@@ -109,6 +109,7 @@ class DiskImage:
     def __init__(self):
         self._handle = None
         self._attached = False
+        self._attached_permanently = False
         self._image_path = None
         self._mount_points = {}  # volume_name: mount_point
 
@@ -545,6 +546,9 @@ class DiskImage:
             raise ctypes.WinError(ret)  # type: ignore
 
         self._attached = True
+        self._attached_permanently = bool(
+            attach_flags & virtdisk.ATTACH_VIRTUAL_DISK_FLAG.PERMANENT_LIFETIME
+        )
 
     def detach(
         self,
@@ -899,7 +903,7 @@ class DiskImage:
     def __del__(self) -> None:
         if not self._handle:
             return
-        if self._mount_points:
+        if self._mount_points and not self._attached_permanently:
             try:
                 self.umount_volume()
             except Exception:
