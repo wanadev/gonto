@@ -97,6 +97,12 @@ class VolumeEnumerationTimeout(BaseDiskImageError):
     pass
 
 
+class VolumeNotMounted(BaseDiskImageError):
+    """The given volume or mount point is not mounted."""
+
+    pass
+
+
 class DiskImage:
     """Manipulates a disk image (vhd, vhdx, iso) on Windows."""
 
@@ -104,6 +110,7 @@ class DiskImage:
         self._handle = None
         self._attached = False
         self._image_path = None
+        self._mount_points = {}  # volume_name: mount_point
 
     def open(
         self,
@@ -560,6 +567,9 @@ class DiskImage:
         if not self._attached:
             raise DiskImageNotAttached("The disk is not attached")
 
+        # First umount volumes to remove mounted folders
+        self.umount_volume()
+
         ret = virtdisk.lib.DetachVirtualDisk(
             self._handle,
             detach_flags,
@@ -769,7 +779,67 @@ class DiskImage:
 
         success = winbase.lib.SetVolumeMountPointW(mount_point, volume_name)
 
-        if not success:
+        if success:
+            self._mount_points[volume_name] = mount_point
+        else:
+            raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
+
+    def umount_volume(
+        self,
+        volume_name: str | None = None,
+        mount_point: str | None = None,
+    ) -> None:
+        """Umount a volume from its volume name or mount point.
+
+        If not argument provided, unmount all mounted volumes of the current image.
+
+        If given volume_name or
+
+        :param mount_point: The drive letter or the directory where the volume
+            was mounted (e.g. ``"G:\\\\"``, ``"C:\\\\MyEmptyFolder\\\\"``).
+
+            .. IMPORTANT::
+
+               The mount path must ends with a trailing backslash (``\\``).
+
+        :param volume_name: The id of the volume to umount
+            (``\\\\?\\Volume{GUID}\\``)
+
+        :raises ValueError: If both ``volume_name`` and ``mount_point`` are
+            provided.
+        :raises VolumeNotMounted: If given volume or mount point is not mounted.
+        :raise WindowsError|OSError: If a Win32 error occurs.
+        """
+        if volume_name is not None and mount_point is not None:
+            raise ValueError(
+                "volume_name and mount_point cannot be defined simultaneously"
+            )
+
+        # Unmount all
+        if volume_name is None and mount_point is None:
+            for volume_name in list(self._mount_points.keys()):
+                self.umount_volume(volume_name=volume_name)
+            return
+
+        if volume_name:
+            if volume_name not in self._mount_points:
+                raise VolumeNotMounted("Volume '%s' not mounted" % volume_name)
+            mount_point = self._mount_points[volume_name]
+        elif mount_point:
+            if mount_point not in self._mount_points.values():
+                raise VolumeNotMounted(
+                    "Directory '%s' is not a mount point for a volume in the current disk image"
+                    % mount_point
+                )
+            volume_name = [
+                k for k, v in self._mount_points.items() if v == mount_point
+            ][0]
+
+        success = fileapi.lib.DeleteVolumeMountPointW(mount_point)
+
+        if success:
+            del self._mount_points[volume_name]
+        else:
             raise ctypes.WinError(ctypes.get_last_error())  # type: ignore
 
     def get_volume_mount_point(self, volume_name: str | None = None) -> str | None:
@@ -829,6 +899,11 @@ class DiskImage:
     def __del__(self) -> None:
         if not self._handle:
             return
+        if self._mount_points:
+            try:
+                self.umount_volume()
+            except Exception:
+                pass
         handleapi.lib.CloseHandle(self._handle)
         self._handle = None
         self._attached = False
