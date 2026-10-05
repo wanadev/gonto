@@ -83,7 +83,7 @@ CONFIG_SCHEMA = {
                                     },
                                     "mount_point": {
                                         "type": "string",
-                                        "pattern": r"^(|[D-Z]:\\)$",
+                                        "pattern": r"^(|[C-Z]:\\(.+\\)?)$",
                                         "default": "",
                                     },
                                     "env": {

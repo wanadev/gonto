@@ -106,6 +106,15 @@ def _bind_lib():
     ]
     lib.GetVolumePathNamesForVolumeNameW.restype = ctypes.wintypes.BOOL
 
+    # https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-deletevolumemountpointw
+    # BOOL DeleteVolumeMountPointW(
+    #   [in] LPCWSTR lpszVolumeMountPoint
+    # );
+    lib.DeleteVolumeMountPointW.argtypes = [
+        ctypes.wintypes.LPCWSTR,
+    ]
+    lib.DeleteVolumeMountPointW.restype = ctypes.wintypes.BOOL
+
     return lib
 
 

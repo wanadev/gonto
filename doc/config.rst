@@ -42,14 +42,15 @@ Example Gonto configuration file:
             platform: "win64"         # "win64", "win32" or "multi" (default: "win64")
             format: "vhd"             # "vhd" or "vhdx" (default: "vhd")
             mount_point: "U:\\"       # default: "" (auto)
+                                      # !! Mount point MUST ends with a "\"
             env:
               # The "env" part of the "requires" section allows to use the
               # {{mount_point}} place holder that will be replaced by the
-              # drive letter the volume is mounted on.
+              # mount point the volume is mounted on.
               UNREAL_PATH: "{{mount_point}}"
             reg:
               # Set registry keys right after the image is mounted.
-              # {{mount_point}} place holder will be replaced by the drive letter
+              # {{mount_point}} place holder will be replaced by the mount point
               # the volume is mounted on.
               - root: "HKEY_LOCAL_MACHINE"  # Root key, required.
                 path: "SOFTWARE\\Gonto"     # Path of the subkey (optional, default: "")
