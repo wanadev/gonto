@@ -881,8 +881,8 @@ class DiskImage:
                     "Volume not in the opened disk image: %s" % volume_name
                 )
 
-        _volume_path_names_buffer_p = ctypes.create_unicode_buffer(1024)
-        buffer_length = 1024  # WARN: Length in WCHARs
+        _volume_path_names_buffer_p = ctypes.create_unicode_buffer(4096)
+        buffer_length = 4096  # WARN: Length in WCHARs
         _return_length = ctypes.wintypes.DWORD()
 
         success = fileapi.lib.GetVolumePathNamesForVolumeNameW(
